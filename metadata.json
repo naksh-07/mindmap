@@ -1,0 +1,6 @@
+{
+  "name": "StudyFlow Mind Map",
+  "description": "NotebookLM-style educational mind map visual renderer with interactive hierarchy and Hindi support",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
