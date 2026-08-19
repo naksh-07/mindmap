@@ -157,7 +157,7 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
       {/* Floating Control Toolbar */}
       <div className="pointer-events-auto flex items-center justify-end gap-1 bg-card/90 backdrop-blur-md border border-border/80 shadow-lg rounded-2xl px-2 py-1.5 shrink-0">
         {/* Dataset Scale Selector Dropdown (Desktop/Tablet) */}
-        {onChangeDatasetKey && (
+        {onChangeDatasetKey && process.env.NODE_ENV === 'development' && (
           <div className="relative hidden md:block">
             <button
               onClick={() => {
@@ -452,53 +452,57 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
                 </button>
               ))}
 
-              <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-muted-foreground border-b border-border mt-2">
-                External JSON
-              </div>
-              {[
-                { key: 'sample-json', label: 'Sample JSON (Hindi)' },
-                { key: 'malformed-json', label: 'Malformed JSON (Error Test)' },
-              ].map((d) => (
-                <button
-                  key={d.key}
-                  onClick={() => {
-                    if (onChangeDatasetKey) onChangeDatasetKey(d.key);
-                    setShowOverflowMenu(false);
-                  }}
-                  className={cn(
-                    'w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors flex items-center justify-between',
-                    datasetKey === d.key && 'font-semibold text-primary bg-primary/10'
-                  )}
-                >
-                  <span>{d.label}</span>
-                </button>
-              ))}
+              {process.env.NODE_ENV === 'development' && (
+                <>
+                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-muted-foreground border-b border-border mt-2">
+                    External JSON
+                  </div>
+                  {[
+                    { key: 'sample-json', label: 'Sample JSON (Hindi)' },
+                    { key: 'malformed-json', label: 'Malformed JSON (Error Test)' },
+                  ].map((d) => (
+                    <button
+                      key={d.key}
+                      onClick={() => {
+                        if (onChangeDatasetKey) onChangeDatasetKey(d.key);
+                        setShowOverflowMenu(false);
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors flex items-center justify-between',
+                        datasetKey === d.key && 'font-semibold text-primary bg-primary/10'
+                      )}
+                    >
+                      <span>{d.label}</span>
+                    </button>
+                  ))}
 
-              <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-muted-foreground border-b border-border mt-2">
-                Scale Datasets
-              </div>
-              {[
-                { key: 'geo-20', label: '20 Nodes (Small)' },
-                { key: 'geo-50', label: '50 Nodes (Medium)' },
-                { key: 'geo-100', label: '100 Nodes (Large)' },
-                { key: 'geo-200', label: '200 Nodes (Stress)' },
-                { key: 'geo-500', label: '500 Nodes (Extreme)' },
-                { key: 'geo-1000', label: '1000 Nodes (Max)' },
-              ].map((d) => (
-                <button
-                  key={d.key}
-                  onClick={() => {
-                    if (onChangeDatasetKey) onChangeDatasetKey(d.key);
-                    setShowOverflowMenu(false);
-                  }}
-                  className={cn(
-                    'w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors flex items-center justify-between',
-                    datasetKey === d.key && 'font-semibold text-primary bg-primary/10'
-                  )}
-                >
-                  <span>{d.label}</span>
-                </button>
-              ))}
+                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-muted-foreground border-b border-border mt-2">
+                    Scale Datasets
+                  </div>
+                  {[
+                    { key: 'geo-20', label: '20 Nodes (Small)' },
+                    { key: 'geo-50', label: '50 Nodes (Medium)' },
+                    { key: 'geo-100', label: '100 Nodes (Large)' },
+                    { key: 'geo-200', label: '200 Nodes (Stress)' },
+                    { key: 'geo-500', label: '500 Nodes (Extreme)' },
+                    { key: 'geo-1000', label: '1000 Nodes (Max)' },
+                  ].map((d) => (
+                    <button
+                      key={d.key}
+                      onClick={() => {
+                        if (onChangeDatasetKey) onChangeDatasetKey(d.key);
+                        setShowOverflowMenu(false);
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors flex items-center justify-between',
+                        datasetKey === d.key && 'font-semibold text-primary bg-primary/10'
+                      )}
+                    >
+                      <span>{d.label}</span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>

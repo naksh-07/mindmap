@@ -12,14 +12,16 @@ import { MindMapQuizModal } from '@/components/mindmap/MindMapQuizModal';
 import { MindMapErrorState } from '@/components/mindmap/MindMapErrorState';
 
 export default function MindMapPage() {
-  const [datasetKey, setDatasetKey] = useState<string>('sample-json');
+  const [sourceMode, setSourceMode] = useState<'empty' | 'loading' | 'loaded' | 'error'>('empty');
+  const [datasetKey, setDatasetKey] = useState<string | null>(null);
   const [ingestionResult, setIngestionResult] = useState<IngestionResult>({
     data: null,
     success: false,
     errors: [],
     warnings: [],
   });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const currentFetchId = React.useRef(0);
+  const fetchAbortController = React.useRef<AbortController | null>(null);
 
   // Layout & View State
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('balanced');
@@ -42,8 +44,18 @@ export default function MindMapPage() {
   }, []);
 
   // Data Ingestion Pipeline Execution
-  const loadDataset = useCallback(async (key: string) => {
-    setIsLoading(true);
+  const loadDataset = useCallback(async (key: string | null) => {
+    if (!key) return;
+
+    const fetchId = ++currentFetchId.current;
+    if (fetchAbortController.current) {
+      fetchAbortController.current.abort();
+    }
+    const controller = new AbortController();
+    fetchAbortController.current = controller;
+
+    setSourceMode('loading');
+
     // Reset all view & interactive state when dataset changes to prevent state leakage
     setSelectedNodeId(null);
     setCollapsedSet(new Set());
@@ -55,14 +67,20 @@ export default function MindMapPage() {
 
     if (key.startsWith('http://') || key.startsWith('https://')) {
       try {
-        const response = await fetch(key);
+        const response = await fetch(key, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} ${response.statusText}`);
         }
         const jsonText = await response.text();
+        if (currentFetchId.current !== fetchId) return;
+
         const result = parseAndIngestMindMapData(jsonText);
         setIngestionResult(result);
-      } catch (err) {
+        setSourceMode(result.success ? 'loaded' : 'error');
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+        if (currentFetchId.current !== fetchId) return;
+
         setIngestionResult({
           data: null,
           success: false,
@@ -76,58 +94,43 @@ export default function MindMapPage() {
           ],
           warnings: [],
         });
+        setSourceMode('error');
       }
-    } else if (key === 'sample-json') {
-      try {
-        const response = await fetch('/data/examples/dummy-geography-mindmap.json');
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} ${response.statusText}`);
-        }
-        const jsonText = await response.text();
-        const result = parseAndIngestMindMapData(jsonText);
-        setIngestionResult(result);
-      } catch (err) {
-        setIngestionResult({
-          data: null,
-          success: false,
-          errors: [
-            {
-              path: 'network',
-              code: 'MALFORMED_JSON',
-              message: `Failed to fetch external sample JSON file: ${err instanceof Error ? err.message : String(err)}`,
-              severity: 'fatal',
-            },
+    } else if (process.env.NODE_ENV === 'development') {
+      if (key === 'malformed-json') {
+        const malformedInput = JSON.stringify({
+          id: 'malformed-test',
+          title: 'Malformed Test Data',
+          subject: 'Testing',
+          language: 'hi',
+          root: {
+            id: 'root-node',
+            label: 'Root Concept',
+            children: [
+              { id: 'child-1', label: 'Child 1' },
+              { id: 'child-1', label: 'Duplicate Child ID' },
+            ],
+          },
+          crossLinks: [
+            { sourceId: 'child-1', targetId: 'non-existent-node' },
           ],
-          warnings: [],
         });
+        const result = parseAndIngestMindMapData(malformedInput);
+        if (currentFetchId.current === fetchId) {
+          setIngestionResult(result);
+          setSourceMode(result.success ? 'loaded' : 'error');
+        }
+      } else {
+        const rawBenchmark = ALL_TEST_DATASETS[key] || ALL_TEST_DATASETS['geo-50'];
+        const result = parseAndIngestMindMapData(rawBenchmark);
+        if (currentFetchId.current === fetchId) {
+          setIngestionResult(result);
+          setSourceMode(result.success ? 'loaded' : 'error');
+        }
       }
-    } else if (key === 'malformed-json') {
-      const malformedInput = JSON.stringify({
-        id: 'malformed-test',
-        title: 'Malformed Test Data',
-        subject: 'Testing',
-        language: 'hi',
-        root: {
-          id: 'root-node',
-          label: 'Root Concept',
-          children: [
-            { id: 'child-1', label: 'Child 1' },
-            { id: 'child-1', label: 'Duplicate Child ID' },
-          ],
-        },
-        crossLinks: [
-          { sourceId: 'child-1', targetId: 'non-existent-node' },
-        ],
-      });
-      const result = parseAndIngestMindMapData(malformedInput);
-      setIngestionResult(result);
     } else {
-      const rawBenchmark = ALL_TEST_DATASETS[key] || ALL_TEST_DATASETS['geo-50'];
-      const result = parseAndIngestMindMapData(rawBenchmark);
-      setIngestionResult(result);
+       setSourceMode('empty');
     }
-
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -158,13 +161,103 @@ export default function MindMapPage() {
             ],
             warnings: [],
           });
-          setIsLoading(false);
+          setSourceMode('error');
           return;
         }
       }
     }
-    loadDataset(datasetKey);
+    if (datasetKey) {
+      loadDataset(datasetKey);
+    }
   }, [datasetKey, loadDataset]);
+
+  // Bi-directional postMessage listener for Obsidian plugin bridge integration
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== 'object') return;
+
+      // Validate event origin
+      const trustedOrigins = [
+        'app://obsidian.md',
+        'app://localhost',
+        'capacitor://localhost',
+        'https://mindmap.riyasaksena502.workers.dev',
+      ];
+      
+      if (process.env.NODE_ENV === 'development') {
+        trustedOrigins.push('http://localhost:3000');
+        trustedOrigins.push('http://localhost:3001');
+      }
+
+      const isLocalhost = event.origin.startsWith('http://localhost') || 
+                          event.origin.startsWith('https://localhost');
+                          
+      const isAppOrigin = event.origin.startsWith('app://') || 
+                          event.origin.startsWith('capacitor://') ||
+                          event.origin.startsWith('file://');
+
+      const isExactTrustedOrigin = trustedOrigins.includes(event.origin) || isLocalhost || isAppOrigin;
+
+      if (!isExactTrustedOrigin && event.origin !== 'null' && event.origin !== '') {
+         if (process.env.NODE_ENV === 'development') {
+            console.warn('Blocked message from untrusted origin:', event.origin);
+         }
+         return;
+      }
+
+      // Validate event source. Some privileged/mobile WebViews expose MessageEvent.source as null.
+      // Only allow null source for exact known Obsidian/Capacitor origins, not opaque origins.
+      if (event.source !== window.parent && !(event.source === null && isExactTrustedOrigin)) return;
+
+      if (event.data && event.data.type === 'MINDMAP_DATA') {
+        const rawData = event.data.payload !== undefined ? event.data.payload : event.data.data;
+        if (rawData) {
+          // Cancel any ongoing fetch to ensure Obsidian data is not overwritten
+          currentFetchId.current++;
+          if (fetchAbortController.current) {
+            fetchAbortController.current.abort();
+          }
+
+          setSourceMode('loading');
+          // Reset view & interactive states when new payload arrives
+          setSelectedNodeId(null);
+          setCollapsedSet(new Set());
+          setRevealedNodeIds(new Set());
+          setSearchQuery('');
+          setFocusedBranchId(null);
+          setIsQuizOpen(false);
+          setQuizInitialNodeId(null);
+
+          const result = parseAndIngestMindMapData(rawData);
+          setIngestionResult(result);
+          setSourceMode(result.success ? 'loaded' : 'error');
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Notify parent container (e.g. Obsidian iframe bridge) that viewer is ready
+    const notifyReady = () => {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'MINDMAP_VIEWER_READY' }, '*');
+      }
+    };
+
+    notifyReady();
+    const readyRetryTimers = [
+      window.setTimeout(notifyReady, 150),
+      window.setTimeout(notifyReady, 500),
+      window.setTimeout(notifyReady, 1500),
+    ];
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      readyRetryTimers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, []);
 
   const mindMapData = ingestionResult.data;
 
@@ -389,8 +482,22 @@ export default function MindMapPage() {
     return computeMindMapLayout(mindMapData.root, layoutMode, collapsedSet, forceFallback);
   }, [mindMapData?.root, layoutMode, collapsedSet, fontsLoaded, isMounted]);
 
+  // Empty state view
+  if (sourceMode === 'empty') {
+    return (
+      <main className="w-screen h-screen flex flex-col items-center justify-center bg-background text-foreground select-none p-6 text-center">
+        <div className="flex flex-col items-center gap-4 max-w-md">
+          <h1 className="text-2xl font-bold text-primary">माइंड मैप JSON लोड नहीं हुआ</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Obsidian में <code className="bg-muted px-1 py-0.5 rounded text-primary/80">.mindmap.json</code> खोलें या <code className="bg-muted px-1 py-0.5 rounded text-primary/80">?source=&lt;JSON URL&gt;</code> का उपयोग करें।
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   // Loading state view
-  if (isLoading) {
+  if (sourceMode === 'loading') {
     return (
       <main className="w-screen h-screen flex items-center justify-center bg-background text-foreground select-none">
         <div className="flex flex-col items-center gap-3">
@@ -410,7 +517,7 @@ export default function MindMapPage() {
         <MindMapErrorState
           errors={ingestionResult.errors}
           warnings={ingestionResult.warnings}
-          datasetKey={datasetKey}
+          datasetKey={datasetKey ?? undefined}
           onSelectDataset={(key) => setDatasetKey(key)}
           onRetry={() => loadDataset(datasetKey)}
         />
@@ -426,7 +533,7 @@ export default function MindMapPage() {
         onSearchChange={setSearchQuery}
         layoutMode={layoutMode}
         onChangeLayoutMode={setLayoutMode}
-        datasetKey={datasetKey}
+        datasetKey={datasetKey ?? undefined}
         onChangeDatasetKey={setDatasetKey}
         focusedBranchId={focusedBranchId}
         onClearFocusBranch={() => setFocusedBranchId(null)}
