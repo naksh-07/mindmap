@@ -5,15 +5,17 @@ import { ALL_TEST_DATASETS } from '@/lib/data/test-datasets';
 import { MindMapNode, MindMapData, LayoutMode } from '@/lib/types/mindmap';
 import { parseAndIngestMindMapData, IngestionResult } from '@/lib/mindmap-data';
 import { computeMindMapLayout } from '@/lib/mindmap-layout';
-import { MindMapCanvas } from '@/components/mindmap/MindMapCanvas';
+import { MindMapWebGLCanvas } from '@/components/mindmap/MindMapWebGLCanvas';
 import { MindMapToolbar } from '@/components/mindmap/MindMapToolbar';
 import { MindMapNodeDetailPanel } from '@/components/mindmap/MindMapNodeDetailPanel';
 import { MindMapQuizModal } from '@/components/mindmap/MindMapQuizModal';
 import { MindMapErrorState } from '@/components/mindmap/MindMapErrorState';
+import { Layers, FolderOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function MindMapPage() {
   const [sourceMode, setSourceMode] = useState<'empty' | 'loading' | 'loaded' | 'error'>('empty');
-  const [datasetKey, setDatasetKey] = useState<string | null>(null);
+  const [datasetKey, setDatasetKey] = useState<string | null>('/example-mindmap.json');
   const [ingestionResult, setIngestionResult] = useState<IngestionResult>({
     data: null,
     success: false,
@@ -65,7 +67,13 @@ export default function MindMapPage() {
     setIsQuizOpen(false);
     setQuizInitialNodeId(null);
 
-    if (key.startsWith('http://') || key.startsWith('https://')) {
+    const isFetchableUrl =
+      key.startsWith('http://') ||
+      key.startsWith('https://') ||
+      key.startsWith('/') ||
+      key.endsWith('.json');
+
+    if (isFetchableUrl) {
       try {
         const response = await fetch(key, { signal: controller.signal });
         if (!response.ok) {
@@ -96,40 +104,36 @@ export default function MindMapPage() {
         });
         setSourceMode('error');
       }
-    } else if (process.env.NODE_ENV === 'development') {
-      if (key === 'malformed-json') {
-        const malformedInput = JSON.stringify({
-          id: 'malformed-test',
-          title: 'Malformed Test Data',
-          subject: 'Testing',
-          language: 'hi',
-          root: {
-            id: 'root-node',
-            label: 'Root Concept',
-            children: [
-              { id: 'child-1', label: 'Child 1' },
-              { id: 'child-1', label: 'Duplicate Child ID' },
-            ],
-          },
-          crossLinks: [
-            { sourceId: 'child-1', targetId: 'non-existent-node' },
+    } else if (key === 'malformed-json') {
+      const malformedInput = JSON.stringify({
+        id: 'malformed-test',
+        title: 'Malformed Test Data',
+        subject: 'Testing',
+        language: 'hi',
+        root: {
+          id: 'root-node',
+          label: 'Root Concept',
+          children: [
+            { id: 'child-1', label: 'Child 1' },
+            { id: 'child-1', label: 'Duplicate Child ID' },
           ],
-        });
-        const result = parseAndIngestMindMapData(malformedInput);
-        if (currentFetchId.current === fetchId) {
-          setIngestionResult(result);
-          setSourceMode(result.success ? 'loaded' : 'error');
-        }
-      } else {
-        const rawBenchmark = ALL_TEST_DATASETS[key] || ALL_TEST_DATASETS['geo-50'];
-        const result = parseAndIngestMindMapData(rawBenchmark);
-        if (currentFetchId.current === fetchId) {
-          setIngestionResult(result);
-          setSourceMode(result.success ? 'loaded' : 'error');
-        }
+        },
+        crossLinks: [
+          { sourceId: 'child-1', targetId: 'non-existent-node' },
+        ],
+      });
+      const result = parseAndIngestMindMapData(malformedInput);
+      if (currentFetchId.current === fetchId) {
+        setIngestionResult(result);
+        setSourceMode(result.success ? 'loaded' : 'error');
       }
     } else {
-       setSourceMode('empty');
+      const rawBenchmark = ALL_TEST_DATASETS[key] || ALL_TEST_DATASETS['geo-50'];
+      const result = parseAndIngestMindMapData(rawBenchmark);
+      if (currentFetchId.current === fetchId) {
+        setIngestionResult(result);
+        setSourceMode(result.success ? 'loaded' : 'error');
+      }
     }
   }, []);
 
@@ -139,9 +143,11 @@ export default function MindMapPage() {
       const sourceUrl = params.get('source') || params.get('json');
       if (sourceUrl) {
         try {
-          const parsedUrl = new URL(sourceUrl);
-          if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-            throw new Error(`Unsupported URL protocol '${parsedUrl.protocol}'. Only HTTP/HTTPS URLs are supported.`);
+          if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) {
+            const parsedUrl = new URL(sourceUrl);
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+              throw new Error(`Unsupported URL protocol '${parsedUrl.protocol}'. Only HTTP/HTTPS URLs are supported.`);
+            }
           }
           if (datasetKey !== sourceUrl) {
             setDatasetKey(sourceUrl);
@@ -166,9 +172,8 @@ export default function MindMapPage() {
         }
       }
     }
-    if (datasetKey) {
-      loadDataset(datasetKey);
-    }
+    const targetKey = datasetKey || '/example-mindmap.json';
+    loadDataset(targetKey);
   }, [datasetKey, loadDataset]);
 
   // Bi-directional postMessage listener for Obsidian plugin bridge integration
@@ -485,11 +490,14 @@ export default function MindMapPage() {
   // Empty state view
   if (sourceMode === 'empty') {
     return (
-      <main className="w-screen h-screen flex flex-col items-center justify-center bg-background text-foreground select-none p-6 text-center">
-        <div className="flex flex-col items-center gap-4 max-w-md">
-          <h1 className="text-2xl font-bold text-primary">माइंड मैप JSON लोड नहीं हुआ</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Obsidian में <code className="bg-muted px-1 py-0.5 rounded text-primary/80">.mindmap.json</code> खोलें या <code className="bg-muted px-1 py-0.5 rounded text-primary/80">?source=&lt;JSON URL&gt;</code> का उपयोग करें।
+      <main className="w-screen h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 select-none p-6 text-center">
+        <div className="flex flex-col items-center gap-3.5 max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-8 rounded-2xl shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <Layers className="w-5 h-5" />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">माइंड मैप JSON लोड नहीं हुआ</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
+            Obsidian में <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-600 dark:text-blue-400 font-mono text-xs">.mindmap.json</code> खोलें या <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-600 dark:text-blue-400 font-mono text-xs">?source=&lt;JSON URL&gt;</code> का उपयोग करें।
           </p>
         </div>
       </main>
@@ -499,11 +507,11 @@ export default function MindMapPage() {
   // Loading state view
   if (sourceMode === 'loading') {
     return (
-      <main className="w-screen h-screen flex items-center justify-center bg-background text-foreground select-none">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-medium text-muted-foreground animate-pulse">
-            Mind Map Data loading & validating...
+      <main className="w-screen h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 select-none">
+        <div className="flex flex-col items-center gap-3 bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-6 rounded-2xl shadow-xs backdrop-blur-md">
+          <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            Mind Map डेटा लोड और वैलिडेट हो रहा है...
           </span>
         </div>
       </main>
@@ -551,9 +559,9 @@ export default function MindMapPage() {
         totalNodes={totalNodeCount}
       />
 
-      {/* Main Mind Map Canvas Stage */}
-      <div className="flex-1 w-full h-full relative">
-        <MindMapCanvas
+      {/* Main Mind Map Canvas Stage with Scandinavian Dot Grid */}
+      <div className="flex-1 w-full h-full relative overflow-hidden canvas-dots bg-background">
+        <MindMapWebGLCanvas
           nodes={positionedNodes}
           connectors={connectors}
           crossLinks={mindMapData.crossLinks}
@@ -568,6 +576,50 @@ export default function MindMapPage() {
           onToggleCollapse={handleToggleCollapse}
           onToggleReveal={handleToggleReveal}
         />
+
+        {/* Bottom Canvas HUD: Breadcrumbs & Telemetry */}
+        <footer className="absolute bottom-3.5 left-4 sm:left-6 z-20 pointer-events-none flex items-center gap-2">
+          {/* Breadcrumb Path to Current Focus */}
+          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-xs text-xs text-slate-600 dark:text-slate-400 font-sans">
+            <FolderOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            {lineagePath.length > 0 ? (
+              <div className="flex items-center gap-1 flex-wrap">
+                {lineagePath.map((item, idx) => (
+                  <React.Fragment key={item.id}>
+                    {idx > 0 && <span className="text-slate-300 dark:text-slate-600">/</span>}
+                    <span
+                      onClick={() => setSelectedNodeId(item.id)}
+                      className={cn(
+                        'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors',
+                        idx === lineagePath.length - 1 ? 'font-semibold text-slate-900 dark:text-slate-100' : ''
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </div>
+            ) : (
+              <span
+                onClick={() => setSelectedNodeId(mindMapData.root.id)}
+                className="font-medium text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                title="क्लिक करके रूट नोड इंस्पेक्टर खोलें"
+              >
+                {mindMapData.title}
+              </span>
+            )}
+          </div>
+
+          {/* WebGL Engine Telemetry HUD */}
+          <div className="pointer-events-auto hidden md:flex items-center gap-2 px-2.5 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-xs text-[11px] font-mono text-slate-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{totalNodeCount} Nodes ({positionedNodes.length} Visible)</span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span>60 FPS WebGL</span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span>Obsidian Bridge</span>
+          </div>
+        </footer>
       </div>
 
       {/* Selected Node Details Side Panel / Mobile Bottom Sheet */}

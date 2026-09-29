@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Knowledge Graph</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#faf8ff",
+            "surface-tint": "#0053db",
+            "on-primary-fixed": "#00174b",
+            "on-tertiary-container": "#ffede1",
+            "on-surface": "#131b2e",
+            "on-error-container": "#93000a",
+            "background": "#faf8ff",
+            "secondary-fixed": "#85f8c4",
+            "inverse-primary": "#b4c5ff",
+            "on-primary-container": "#eeefff",
+            "primary-container": "#2563eb",
+            "inverse-on-surface": "#eef0ff",
+            "tertiary-fixed-dim": "#ffb77d",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed-variant": "#003ea8",
+            "tertiary": "#824500",
+            "on-primary": "#ffffff",
+            "secondary-fixed-dim": "#68dba9",
+            "surface-container-low": "#f2f3ff",
+            "tertiary-fixed": "#ffdcc3",
+            "surface-bright": "#faf8ff",
+            "secondary": "#006c4a",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "primary-fixed": "#dbe1ff",
+            "outline": "#737686",
+            "surface-container-high": "#e2e7ff",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#005137",
+            "tertiary-container": "#a65900",
+            "secondary-container": "#82f5c1",
+            "on-secondary-fixed": "#002114",
+            "surface-container-highest": "#dae2fd",
+            "error": "#ba1a1a",
+            "outline-variant": "#c3c6d7",
+            "on-tertiary-fixed": "#2f1500",
+            "surface-variant": "#dae2fd",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "surface-dim": "#d2d9f4",
+            "primary-fixed-dim": "#b4c5ff",
+            "primary": "#004ac6",
+            "surface-container": "#eaedff",
+            "on-surface-variant": "#434655",
+            "on-secondary-container": "#00714e",
+            "inverse-surface": "#283044",
+            "on-tertiary": "#ffffff",
+            "on-background": "#131b2e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "gutter-mobile": "0.75rem",
+            "space-lg": "1.25rem",
+            "gutter": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "margin-mobile": "1rem",
+            "space-xl": "2rem",
+            "margin": "2rem"
+          },
+          "fontFamily": {
+            "label-sm": ["JetBrains Mono"],
+            "headline-md": ["Geist"],
+            "headline-lg": ["Geist"],
+            "body-md": ["Geist"],
+            "headline-xl": ["Geist"],
+            "label-md": ["JetBrains Mono"],
+            "headline-xl-mobile": ["Geist"],
+            "mono-metric": ["JetBrains Mono"],
+            "body-sm": ["Geist"],
+            "headline-sm": ["Geist"],
+            "body-lg": ["Geist"]
+          },
+          "fontSize": {
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "500" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "600" }],
+            "mono-metric": ["13px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .canvas-dots {
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+    }
+    /* Smooth transitions and scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c3c6d7;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden h-screen w-screen flex flex-col font-body-md select-none">
+<!-- TopNavBar (Shared Component Implemented Directly via JSON Directives) -->
+<header class="bg-surface-container-lowest/80 dark:bg-inverse-surface/80 backdrop-blur-md flex justify-between items-center w-full px-6 py-2 border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none z-30 docked full-width top-0 shrink-0">
+<!-- Left: Brand & Search -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-headline-sm font-bold text-xs tracking-tight">
+          A
+        </div>
+<span class="text-headline-sm font-headline-sm text-on-surface dark:text-inverse-on-surface tracking-tight font-semibold">Atlas Knowledge Graph</span>
+</div>
+<!-- Quick Search Bar (search_bar: on_left) -->
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-outline">search</span>
+<input class="w-64 h-8 pl-8 pr-12 rounded-lg bg-surface-container-low border border-outline-variant/60 text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all duration-150" placeholder="Search concept or node..." type="text"/>
+<kbd class="absolute right-2 px-1.5 py-0.5 rounded text-label-sm font-label-sm bg-surface-container-lowest border border-outline-variant text-outline">⌘K</kbd>
+</div>
+<!-- Navigation Tabs with Active State Logic ("Graph" Active) -->
+<nav class="hidden md:flex items-center gap-5 ml-2">
+<!-- Active: Graph -->
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed font-medium pb-1 text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99] flex items-center gap-1.5" href="#graph">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+          Graph
+        </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md pb-1 transition-all duration-150 ease-out active:scale-[0.99]" href="#outline">
+          Outline
+        </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md pb-1 transition-all duration-150 ease-out active:scale-[0.99]" href="#timeline">
+          Timeline
+        </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md pb-1 transition-all duration-150 ease-out active:scale-[0.99]" href="#analytics">
+          Analytics
+        </a>
+</nav>
+</div>
+<!-- Right Controls: Zoom/Fit & Trailing Actions & Profile -->
+<div class="flex items-center gap-3">
+<!-- Trailing Icon Actions [zoom_in, zoom_out, fit_screen, tune] -->
+<div class="flex items-center border border-outline-variant/60 rounded-lg p-0.5 bg-surface-container-lowest">
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all duration-150 ease-out active:scale-[0.99]" title="Zoom In">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all duration-150 ease-out active:scale-[0.99]" title="Zoom Out">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all duration-150 ease-out active:scale-[0.99]" title="Fit to Screen">
+<span class="material-symbols-outlined">fit_screen</span>
+</button>
+<div class="h-4 w-px bg-outline-variant/60 my-auto mx-0.5"></div>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all duration-150 ease-out active:scale-[0.99]" title="Settings / Tune">
+<span class="material-symbols-outlined">tune</span>
+</button>
+</div>
+<div class="h-5 w-px bg-outline-variant/50 mx-0.5"></div>
+<!-- Trailing Secondary Action: Active Recall -->
+<button class="h-8 px-3 rounded-lg border border-outline-variant/80 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low text-label-md font-label-md flex items-center gap-1.5 transition-all duration-150 ease-out active:scale-[0.99]">
+<span class="material-symbols-outlined text-[16px] text-primary">psychology</span>
+        Active Recall
+      </button>
+<!-- Trailing Primary Action: Quiz -->
+<button class="h-8 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md flex items-center gap-1.5 transition-all duration-150 ease-out active:scale-[0.99] shadow-sm">
+<span class="material-symbols-outlined text-[16px]">school</span>
+        Quiz
+      </button>
+<!-- User Profile Avatar -->
+<div class="w-8 h-8 rounded-full border border-outline-variant/80 overflow-hidden ml-1 flex-shrink-0 cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A refined overhead flat lay photo of a Nordic architect's workstation. Natural Scandinavian light softly diffuses over raw oak wood, sketching tools, and a focused ceramic espresso cup. Calm slate and crisp white hues dominate, symbolizing quiet concentration and structural discipline." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKS6Us9IlGVs9GoRBZWla5MTx2l6vkpDDsl010b7L6HEx5UbN7GzMlKNXJtdUiokC_QNmBqTa_yPoaJaQbPDMXhHpeOybW6irn8XULUDMmm-ybH3N5mvk7N3fjBhqYSTnXvU1Hrk0zsfK1L-inv-sYn1uIpDxvfTErMAnKjG7Y8FWrYOzmucTJo5eTyJbA2HqELJvXTjzmYXYjuoZhPzynYnQo6s3IgD-ewxabApE_6_KX_sWgNmOai1zHQP0OL7q3u6JzWJLobd8"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas Workspace + Docked Inspector Split -->
+<div class="flex-1 flex overflow-hidden relative">
+<!-- Interactive Canvas Area -->
+<main class="flex-1 relative overflow-hidden canvas-dots flex flex-col">
+<!-- Floating Frosted Glass Canvas Toolbar -->
+<div class="absolute top-4 left-6 z-20 flex items-center gap-2 p-1.5 bg-surface-container-lowest/85 backdrop-blur-md border border-outline-variant/70 rounded-xl shadow-sm">
+<!-- Node count indicator badge -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded-lg text-label-sm font-label-sm text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>18/64 Nodes Active</span>
+</div>
+<div class="h-4 w-px bg-outline-variant/60"></div>
+<!-- Layout Selector Toggle -->
+<div class="flex items-center bg-surface-container-low rounded-lg p-0.5 text-label-sm font-label-sm">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary font-medium shadow-xs border border-outline-variant/40 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">hub</span>
+            Hierarchical Radial
+          </button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">reorder</span>
+            Balanced
+          </button>
+</div>
+<div class="h-4 w-px bg-outline-variant/60"></div>
+<!-- Dataset Toggle & Focus Mode -->
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant flex items-center gap-1 transition-all duration-150">
+<span class="material-symbols-outlined text-[15px]">database</span>
+          All Syllabi
+        </button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-lg hover:bg-surface-container-high text-on-surface-variant flex items-center gap-1 transition-all duration-150" title="Reset Zoom">
+<span class="material-symbols-outlined text-[15px]">restart_alt</span>
+          Reset
+        </button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-lg hover:bg-surface-container-high text-primary flex items-center gap-1 font-medium transition-all duration-150">
+<span class="material-symbols-outlined text-[15px]">center_focus_strong</span>
+          Focus Mode
+        </button>
+</div>
+<!-- Graph Visualization Vector Layer + Nodes -->
+<div class="w-full h-full relative overflow-auto flex items-center justify-center cursor-grab active:cursor-grabbing p-12">
+<div class="relative w-[960px] h-[640px] flex-shrink-0">
+<!-- Architectural Connecting Bezier SVG Splines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none stroke-outline-variant/80" fill="none">
+<!-- Root to Bretton Woods -->
+<path d="M 280 320 C 350 320, 360 210, 440 210" stroke="#2563eb" stroke-dasharray="0" stroke-width="2"></path>
+<!-- Root to Cold War Alignment -->
+<path d="M 280 320 C 350 320, 360 110, 440 110" stroke-width="1.5"></path>
+<!-- Root to Decolonization -->
+<path d="M 280 320 C 350 320, 360 410, 440 410" stroke-width="1.5"></path>
+<!-- Root to European Integration -->
+<path d="M 280 320 C 350 320, 360 520, 440 520" stroke-width="1.5"></path>
+<!-- Bretton Woods Sub-branches -->
+<path d="M 680 210 C 720 210, 720 160, 760 160" stroke="#2563eb" stroke-opacity="0.8" stroke-width="1.5"></path>
+<path d="M 680 210 C 720 210, 720 255, 760 255" stroke="#2563eb" stroke-opacity="0.8" stroke-width="1.5"></path>
+<!-- Cold War Sub-branch -->
+<path d="M 660 110 C 700 110, 720 70, 760 70" stroke-width="1.5"></path>
+<!-- European Integration Sub-branch -->
+<path d="M 660 520 C 710 520, 720 540, 760 540" stroke-width="1.5"></path>
+</svg>
+<!-- ROOT NODE -->
+<div class="absolute top-[280px] left-[20px] w-[260px] bg-surface-container-lowest border-2 border-outline-variant p-4 rounded-xl shadow-sm transition-all duration-150 hover:border-primary-container">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Root Axis</span>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-snug">World History & Geopolitics</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Post-War Era (1944–1991)</p>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/40 flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span>4 Main Systems</span>
+<span class="font-mono-metric text-mono-metric font-medium text-on-surface">64 Nodes</span>
+</div>
+</div>
+<!-- PRIMARY BRANCH 1: Cold War Alignment -->
+<div class="absolute top-[80px] left-[440px] w-[220px] bg-surface-container-lowest border border-outline-variant p-3.5 rounded-xl shadow-sm hover:border-primary-container transition-all">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-label-sm font-label-sm text-outline">Branch 01</span>
+<span class="text-label-sm font-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">Bipolarity</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-on-surface">Cold War Alignment</h4>
+<p class="text-body-sm text-on-surface-variant text-xs mt-0.5">NATO & Warsaw Pact Treaties</p>
+</div>
+<!-- Sub-node: Cold War -->
+<div class="absolute top-[50px] left-[760px] w-[180px] bg-surface-container-lowest border border-outline-variant/80 p-2.5 rounded-lg shadow-sm">
+<span class="text-label-sm font-label-sm text-outline">Security Accord</span>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5">Marshall Plan (1948)</div>
+</div>
+<!-- PRIMARY BRANCH 2: BRETTON WOODS (ACTIVE / SELECTED NODE) -->
+<div class="absolute top-[170px] left-[440px] w-[240px] bg-surface-container-lowest border-2 border-primary-container p-4 rounded-xl shadow-md ring-4 ring-primary-container/10 transition-all duration-150">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-label-sm font-label-sm bg-primary-fixed text-primary px-2 py-0.5 rounded font-medium">Selected Active</span>
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-tight">Bretton Woods System</h4>
+<p class="text-body-sm font-body-sm text-primary font-medium mt-1">Monetary Order & IMF</p>
+<div class="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-outline-variant/40">
+<span class="text-label-sm font-label-sm bg-secondary-fixed text-on-secondary-fixed-variant px-1.5 py-0.5 rounded font-medium">Yield 94%</span>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">4 Links</span>
+</div>
+</div>
+<!-- Sub-node 1 (Bretton Woods): IMF Articles -->
+<div class="absolute top-[140px] left-[760px] w-[190px] bg-surface-container-lowest border border-primary-container/60 p-2.5 rounded-lg shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-primary font-medium">Institution</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+</div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5">IMF Articles of Agreement</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">Fixed Exchange (Gold)</span>
+</div>
+<!-- Sub-node 2 (Bretton Woods): IBRD / World Bank -->
+<div class="absolute top-[235px] left-[760px] w-[190px] bg-surface-container-lowest border border-outline-variant p-2.5 rounded-lg shadow-sm hover:border-primary-container">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">Reconstruction</span>
+</div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5">IBRD Capital Mechanism</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">Post-war Credit Flow</span>
+</div>
+<!-- PRIMARY BRANCH 3: Decolonization Movements -->
+<div class="absolute top-[385px] left-[440px] w-[220px] bg-surface-container-lowest border border-outline-variant p-3.5 rounded-xl shadow-sm hover:border-primary-container transition-all">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-label-sm font-label-sm text-outline">Branch 03</span>
+<span class="text-label-sm font-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">Sovereignty</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-on-surface">Decolonization Movements</h4>
+<p class="text-body-sm text-on-surface-variant text-xs mt-0.5">Bandung Conference & Non-Aligned</p>
+</div>
+<!-- PRIMARY BRANCH 4: European Integration -->
+<div class="absolute top-[490px] left-[440px] w-[220px] bg-surface-container-lowest border border-outline-variant p-3.5 rounded-xl shadow-sm hover:border-primary-container transition-all">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-label-sm font-label-sm text-outline">Branch 04</span>
+<span class="text-label-sm font-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">Coal & Steel</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-on-surface">European Integration</h4>
+<p class="text-body-sm text-on-surface-variant text-xs mt-0.5">ECSC & Treaty of Rome (1957)</p>
+</div>
+<!-- Sub-node: European Coal and Steel Community -->
+<div class="absolute top-[520px] left-[760px] w-[180px] bg-surface-container-lowest border border-outline-variant/80 p-2.5 rounded-lg shadow-sm">
+<span class="text-label-sm font-label-sm text-outline">Treaty Framework</span>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5">Schuman Declaration</div>
+</div>
+</div>
+</div>
+<!-- Bottom Canvas HUD -->
+<footer class="absolute bottom-4 left-6 right-[440px] z-20 flex items-center justify-between pointer-events-none">
+<!-- Breadcrumb Path to Current Focus -->
+<div class="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/70 rounded-lg shadow-sm text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">folder_open</span>
+<span class="hover:text-on-surface cursor-pointer">History</span>
+<span class="text-outline">/</span>
+<span class="hover:text-on-surface cursor-pointer">Post-War Geopolitics</span>
+<span class="text-outline">/</span>
+<span class="font-medium text-on-surface">Bretton Woods System</span>
+</div>
+<!-- HUD Controls: Minimap & Full-screen trigger -->
+<div class="pointer-events-auto flex items-center gap-2 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/70 rounded-lg p-1 shadow-sm">
+<button class="px-2 py-1 rounded text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 transition-all duration-150">
+<span class="material-symbols-outlined text-[16px]">map</span>
+            Minimap
+          </button>
+<div class="h-3 w-px bg-outline-variant/60"></div>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all duration-150" title="Full Screen">
+<span class="material-symbols-outlined text-[16px]">fullscreen</span>
+</button>
+</div>
+</footer>
+</main>
+<!-- Right-Docked Detail & Inspector Panel (Width: 416px, Porcelain Surface, 1px Hairline Border) -->
+<aside class="w-[416px] bg-surface-container-lowest border-l border-outline-variant/80 flex flex-col h-full z-20 shrink-0 overflow-y-auto">
+<!-- Panel Header & Breadcrumb -->
+<div class="p-5 border-b border-outline-variant/60 space-y-3">
+<!-- Breadcrumb -->
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-outline">
+<span>History</span>
+<span class="text-outline-variant">›</span>
+<span>Economic Order</span>
+<span class="text-outline-variant">›</span>
+<span class="text-primary font-medium">Bretton Woods</span>
+</div>
+<!-- Title & Status Chips -->
+<div>
+<div class="flex items-center gap-2 mb-1.5 flex-wrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-container-high text-on-surface font-medium border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+              Primary Syllabus
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm bg-secondary-fixed text-on-secondary-fixed-variant font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              High Yield 94%
+            </span>
+<span class="text-label-sm font-label-sm font-mono-metric text-outline ml-auto">ID #BW-1944</span>
+</div>
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface tracking-tight">Bretton Woods System</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Fixed exchange rates, dollar convertibility to gold ($35/oz), and postwar financial architectures.</p>
+</div>
+<!-- Prominent 'Open in Obsidian' Button -->
+<button class="w-full h-9 rounded-lg bg-surface-container-lowest border border-outline-variant hover:border-primary-container hover:bg-surface-container-low text-on-surface flex items-center justify-between px-3 text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99] group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-primary group-hover:scale-105 transition-transform">edit_note</span>
+<span class="font-medium">Open in Obsidian</span>
+</div>
+<kbd class="px-1.5 py-0.5 rounded text-label-sm font-label-sm bg-surface-container border border-outline-variant text-outline group-hover:text-on-surface">⌘↵</kbd>
+</button>
+</div>
+<!-- Node Attributes Grid (Architectural Porcelain Tectonic) -->
+<div class="p-5 border-b border-outline-variant/60">
+<h4 class="text-label-sm font-label-sm text-outline uppercase tracking-wider mb-3">Node Attributes</h4>
+<div class="grid grid-cols-2 gap-2.5">
+<div class="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/40">
+<div class="text-label-sm font-label-sm text-outline">Classification</div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5">Monetary Treaties</div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/40">
+<div class="text-label-sm font-label-sm text-outline">Revision Status</div>
+<div class="text-body-sm font-body-sm font-medium text-secondary mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-secondary">check_circle</span>
+              Mastered 92%
+            </div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/40">
+<div class="text-label-sm font-label-sm text-outline">Cross-links</div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5 font-mono-metric">6 Connected Nodes</div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/40">
+<div class="text-label-sm font-label-sm text-outline">Last Synced</div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface mt-0.5 font-mono-metric">Today, 10:14 AM</div>
+</div>
+</div>
+</div>
+<!-- Key Synthesis / Node Insights -->
+<div class="p-5 border-b border-outline-variant/60 space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Key Synthesis & Checkpoints</h4>
+<span class="text-label-sm font-label-sm text-primary font-medium flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span> Verified
+          </span>
+</div>
+<ul class="space-y-2.5 text-body-sm font-body-sm text-on-surface-variant">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[16px] mt-0.5 flex-shrink-0">check_small</span>
+<span>Established <strong>IMF</strong> to supervise balance-of-payments deficits and mitigate competitive currency devaluations.</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[16px] mt-0.5 flex-shrink-0">check_small</span>
+<span>Created <strong>IBRD (World Bank)</strong> to provide long-term capital for European reconstruction and economic expansion.</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[16px] mt-0.5 flex-shrink-0">check_small</span>
+<span>Gold-Exchange standard dissolved in 1971 ("Nixon Shock") due to the Triffin dilemma and reserve deficits.</span>
+</li>
+</ul>
+</div>
+<!-- Linked Concepts Pill Tags -->
+<div class="p-5 border-b border-outline-variant/60 space-y-2.5">
+<div class="flex items-center justify-between">
+<h4 class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Linked Concepts</h4>
+<span class="text-label-sm font-label-sm text-outline">4 References</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low border border-outline-variant/60 text-body-sm font-body-sm text-on-surface hover:border-primary-container cursor-pointer transition-colors">
+            Gold Standard Deficit
+          </span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low border border-outline-variant/60 text-body-sm font-body-sm text-on-surface hover:border-primary-container cursor-pointer transition-colors">
+            Keynesian Plan
+          </span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low border border-outline-variant/60 text-body-sm font-body-sm text-on-surface hover:border-primary-container cursor-pointer transition-colors">
+            White Plan
+          </span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low border border-outline-variant/60 text-body-sm font-body-sm text-on-surface hover:border-primary-container cursor-pointer transition-colors">
+            World Bank Group
+          </span>
+</div>
+</div>
+<!-- Bottom Action: Practice Recall Quiz with Progress Dial -->
+<div class="p-5 mt-auto bg-surface-container-low/40">
+<div class="p-4 rounded-xl border border-outline-variant/70 bg-surface-container-lowest flex items-center justify-between shadow-xs">
+<div class="space-y-1">
+<div class="text-label-sm font-label-sm text-primary font-medium">Daily Retention Target</div>
+<div class="text-body-md font-body-md font-semibold text-on-surface">Start Practice Recall Quiz</div>
+<div class="text-label-sm font-label-sm text-outline">12 Concept Flashcards queued</div>
+</div>
+<!-- Minimalist Progress Dial (SVG Ring) -->
+<div class="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
+<svg class="w-12 h-12 -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="82, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute font-mono-metric text-label-sm font-semibold text-on-surface">82%</span>
+</div>
+</div>
+<button class="w-full mt-3 h-10 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-medium flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+          Begin Active Recall Session
+        </button>
+</div>
+</aside>
+</div>
+</body></html>

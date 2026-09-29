@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyLab — Scholarly Authentication</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&amp;family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config Verbatim -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#c7c4d8",
+            "secondary-container": "#d5e0f8",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#c3c0ff",
+            "surface-tint": "#4d44e3",
+            "secondary-fixed-dim": "#bcc7de",
+            "on-secondary-fixed": "#111c2d",
+            "surface-container-low": "#eff4ff",
+            "surface-variant": "#d3e4fe",
+            "on-primary-container": "#dad7ff",
+            "on-error-container": "#93000a",
+            "primary-fixed-dim": "#c3c0ff",
+            "on-surface-variant": "#464555",
+            "on-surface": "#0b1c30",
+            "inverse-surface": "#213145",
+            "on-tertiary-fixed": "#001a42",
+            "tertiary-fixed-dim": "#adc6ff",
+            "outline": "#777587",
+            "tertiary-container": "#005cc6",
+            "surface-container-lowest": "#ffffff",
+            "surface-dim": "#cbdbf5",
+            "on-secondary-fixed-variant": "#3c475a",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#d8e3fb",
+            "surface": "#f8f9ff",
+            "tertiary-fixed": "#d8e2ff",
+            "primary-container": "#4f46e5",
+            "background": "#f8f9ff",
+            "inverse-on-surface": "#eaf1ff",
+            "primary": "#3525cd",
+            "on-primary-fixed-variant": "#3323cc",
+            "on-tertiary-container": "#cedbff",
+            "on-primary-fixed": "#0f0069",
+            "secondary": "#545f73",
+            "surface-bright": "#f8f9ff",
+            "on-secondary-container": "#586377",
+            "surface-container-high": "#dce9ff",
+            "on-background": "#0b1c30",
+            "on-tertiary-fixed-variant": "#004395",
+            "error": "#ba1a1a",
+            "on-secondary": "#ffffff",
+            "primary-fixed": "#e2dfff",
+            "on-tertiary": "#ffffff",
+            "on-primary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "tertiary": "#004598",
+            "surface-container": "#e5eeff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "margin": "2.5rem",
+            "space-lg": "1.5rem",
+            "gutter": "1.5rem",
+            "space-sm": "0.5rem",
+            "margin-mobile": "1rem",
+            "space-xl": "2.5rem",
+            "gutter-mobile": "1rem"
+          },
+          "fontFamily": {
+            "headline-lg": [
+              "Newsreader"
+            ],
+            "display-lg": [
+              "Newsreader"
+            ],
+            "label-md": [
+              "JetBrains Mono"
+            ],
+            "headline-sm": [
+              "Hanken Grotesk"
+            ],
+            "body-md": [
+              "Hanken Grotesk"
+            ],
+            "headline-lg-mobile": [
+              "Newsreader"
+            ],
+            "body-lg": [
+              "Hanken Grotesk"
+            ],
+            "display-lg-mobile": [
+              "Newsreader"
+            ],
+            "label-sm": [
+              "JetBrains Mono"
+            ],
+            "headline-md": [
+              "Newsreader"
+            ],
+            "body-sm": [
+              "Hanken Grotesk"
+            ]
+          },
+          "fontSize": {
+            "headline-lg": [
+              "32px",
+              {
+                "lineHeight": "40px",
+                "letterSpacing": "-0.01em",
+                "fontWeight": "500"
+              }
+            ],
+            "display-lg": [
+              "48px",
+              {
+                "lineHeight": "56px",
+                "letterSpacing": "-0.02em",
+                "fontWeight": "500"
+              }
+            ],
+            "label-md": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "letterSpacing": "0.02em",
+                "fontWeight": "500"
+              }
+            ],
+            "headline-sm": [
+              "18px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "600"
+              }
+            ],
+            "body-md": [
+              "14px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "400"
+              }
+            ],
+            "headline-lg-mobile": [
+              "26px",
+              {
+                "lineHeight": "34px",
+                "letterSpacing": "0em",
+                "fontWeight": "500"
+              }
+            ],
+            "body-lg": [
+              "16px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "400"
+              }
+            ],
+            "display-lg-mobile": [
+              "32px",
+              {
+                "lineHeight": "40px",
+                "letterSpacing": "-0.01em",
+                "fontWeight": "500"
+              }
+            ],
+            "label-sm": [
+              "11px",
+              {
+                "lineHeight": "14px",
+                "letterSpacing": "0.04em",
+                "fontWeight": "500"
+              }
+            ],
+            "headline-md": [
+              "24px",
+              {
+                "lineHeight": "32px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-sm": [
+              "13px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased selection:bg-secondary-container selection:text-on-surface">
+<!-- TopNavBar from Shared Components JSON -->
+<header class="w-full bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm docked full-width top-0 z-50">
+<div class="w-full px-margin py-space-sm flex justify-between items-center max-w-7xl mx-auto">
+<!-- Brand Anchor -->
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary border border-outline-variant/40">
+<span class="material-symbols-outlined text-[20px]" data-icon="science">science</span>
+</div>
+<a class="font-headline-md text-headline-md text-primary dark:text-inverse-primary font-medium tracking-tight flex items-center gap-2" href="#">
+          StudyLab
+        </a>
+<span class="ml-2 font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-low text-secondary border border-outline-variant/40 hidden sm:inline-block">
+          Academic Workspace
+        </span>
+</div>
+<!-- Navigation Links from JSON -->
+<nav class="hidden md:flex items-center space-x-6">
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-150 px-3 py-1.5 rounded text-body-sm font-body-sm" href="#">
+          Documentation
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-150 px-3 py-1.5 rounded text-body-sm font-body-sm" href="#">
+          Help &amp; Support
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-variant transition-colors duration-150 px-3 py-1.5 rounded text-body-sm font-body-sm" href="#">
+          Institutional Access
+        </a>
+</nav>
+<!-- Trailing Secondary Action from JSON -->
+<div class="flex items-center gap-3">
+<a class="font-body-sm text-body-sm font-medium text-primary dark:text-inverse-primary hover:bg-surface-container-low dark:hover:bg-surface-variant transition-all duration-150 px-3.5 py-1.5 rounded-lg border border-outline-variant/60 flex items-center gap-1.5" href="#sso">
+<span class="material-symbols-outlined text-[16px]" data-icon="account_balance">account_balance</span>
+<span>University SSO</span>
+</a>
+</div>
+</div>
+</header>
+<!-- Main Canvas: Authentication Experience -->
+<main class="flex-1 flex items-center justify-center px-4 py-space-xl relative overflow-hidden">
+<!-- Subtle Background Architectural Blueprint Accents -->
+<div class="absolute inset-0 pointer-events-none opacity-[0.35] [background-image:radial-gradient(#c7c4d8_0.75px,transparent_0.75px)] [background-size:24px_24px]"></div>
+<div class="w-full max-w-md relative z-10">
+<!-- Card Container (Level 1 Elevation) -->
+<div class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl shadow-[0_1px_3px_0_rgba(15,23,42,0.04),0_1px_2px_-1px_rgba(15,23,42,0.02)] p-space-lg md:p-8">
+<!-- Header Hierarchy -->
+<div class="mb-space-lg text-left">
+<div class="inline-flex items-center gap-1.5 text-primary mb-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase">Portal Access</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface font-headline-lg">
+            Welcome back
+          </h1>
+<p class="font-body-sm text-body-sm text-secondary mt-1">
+            Sign in to access your research, study schedules, and laboratory notes.
+          </p>
+</div>
+<!-- Form Elements -->
+<form class="space-y-space-md" onsubmit="event.preventDefault();">
+<!-- Email Input Field -->
+<div class="space-y-1.5">
+<label class="block font-body-sm text-body-sm font-medium text-on-surface" for="email">
+              Academic or Personal Email
+            </label>
+<div class="relative rounded-lg">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2 text-body-md font-body-md text-on-surface bg-surface-container-lowest border border-outline-variant rounded-lg placeholder:text-secondary/60 focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 transition-colors" id="email" name="email" placeholder="e.g., alex.chen@university.edu" required="" type="email"/>
+</div>
+<div class="flex items-center justify-between text-[11px] font-label-sm text-secondary">
+<span>Supports Shibboleth, InCommon &amp; OpenID</span>
+</div>
+</div>
+<!-- Password Input Field -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block font-body-sm text-body-sm font-medium text-on-surface" for="password">
+                Password
+              </label>
+<a class="font-body-sm text-body-sm text-primary hover:text-primary-container hover:underline transition-colors font-medium" href="#">
+                Forgot password?
+              </a>
+</div>
+<div class="relative rounded-lg">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="lock">lock</span>
+</div>
+<input class="block w-full pl-10 pr-10 py-2 text-body-md font-body-md text-on-surface bg-surface-container-lowest border border-outline-variant rounded-lg placeholder:text-secondary/60 focus:outline-none focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 transition-colors" id="password" name="password" placeholder="••••••••••••" required="" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-on-surface transition-colors focus:outline-none" id="togglePassword" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility" id="passwordIcon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me Checkbox -->
+<div class="flex items-start pt-1">
+<div class="flex items-center h-5">
+<input class="h-4 w-4 rounded border-outline text-primary-container focus:ring-primary-container focus:ring-offset-0 transition-colors" id="remember" name="remember" type="checkbox"/>
+</div>
+<div class="ml-2.5 text-body-sm">
+<label class="font-body-sm text-on-surface select-none cursor-pointer" for="remember">
+                Remember this terminal
+              </label>
+<p class="font-label-sm text-label-sm text-secondary leading-tight mt-0.5">
+                Preserves encrypted academic cache for 30 days.
+              </p>
+</div>
+</div>
+<!-- Primary Action CTA -->
+<div class="pt-2">
+<button class="w-full h-[40px] px-space-md bg-primary-container hover:bg-primary text-on-primary font-body-md text-body-md font-medium rounded-lg shadow-sm hover:shadow transition-all duration-150 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<!-- Secondary Action: Continue as Guest -->
+<div>
+<button class="w-full h-[38px] px-space-md bg-surface-container-lowest border border-outline-variant/80 hover:bg-surface-container-low text-on-surface font-body-md text-body-md font-medium rounded-lg hover:border-outline transition-all duration-150 flex items-center justify-center gap-2 focus:outline-none" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="local_library">local_library</span>
+<span>Continue as Guest</span>
+</button>
+</div>
+<!-- Divider -->
+<div class="relative py-2" id="sso">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/60"></div>
+</div>
+<div class="relative flex justify-center text-label-sm">
+<span class="bg-surface-container-lowest px-3 font-label-sm text-secondary uppercase tracking-wider">
+                Federated Identity
+              </span>
+</div>
+</div>
+<!-- SSO Access Button -->
+<button class="w-full py-2.5 px-3 rounded-lg border border-outline-variant bg-surface-container-low/40 hover:bg-surface-container-low hover:border-outline text-left transition-all duration-150 flex items-center justify-between group" type="button">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded bg-surface-container-lowest border border-outline-variant/60 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]" data-icon="corporate_fare">corporate_fare</span>
+</div>
+<div>
+<span class="block font-body-sm text-body-sm font-medium text-on-surface leading-tight">
+                  Log in with Institutional SSO / University ID
+                </span>
+<span class="block font-label-sm text-label-sm text-secondary">
+                  Harvard, MIT, Oxford, Stanford &amp; 1,400+ others
+                </span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-secondary group-hover:translate-x-0.5 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+</form>
+<!-- Compliance & Security Assurance Badge -->
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-center gap-4 text-secondary text-label-sm font-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="verified_user">verified_user</span>
+<span>FERPA Compliant</span>
+</div>
+<span class="text-outline-variant">•</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="lock_clock">lock_clock</span>
+<span>256-Bit TLS</span>
+</div>
+<span class="text-outline-variant">•</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="hub">hub</span>
+<span>ORCID Ready</span>
+</div>
+</div>
+</div>
+<!-- Quick Sub-card Assistance Note -->
+<div class="mt-4 text-center">
+<p class="font-body-sm text-body-sm text-secondary">
+          Need departmental licensing? 
+          <a class="text-primary hover:underline font-medium" href="#">Contact campus coordination</a>
+</p>
+</div>
+</div>
+</main>
+<!-- Footer from Shared Components JSON -->
+<footer class="w-full bg-surface dark:bg-inverse-surface border-t border-outline-variant dark:border-outline flat no shadows docked full-width bottom-0">
+<div class="w-full py-space-lg px-margin flex flex-col md:flex-row justify-between items-center gap-space-md max-w-7xl mx-auto">
+<!-- Copyright Text from JSON -->
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+<span class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim">
+          © 2025 StudyLab Academic Systems. All rights reserved.
+        </span>
+</div>
+<!-- Links from JSON -->
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 font-label-sm text-label-sm">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-inverse-primary hover:underline transition-colors duration-150" href="#">
+          Institutional Access
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-inverse-primary hover:underline transition-colors duration-150" href="#">
+          System Status
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-inverse-primary hover:underline transition-colors duration-150" href="#">
+          Privacy Policy
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-inverse-primary hover:underline transition-colors duration-150" href="#">
+          Terms of Service
+        </a>
+</div>
+</div>
+</footer>
+<!-- Vanilla Script for Micro-Interactions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      const passwordIcon = document.getElementById('passwordIcon');
+
+      if (toggleBtn && passwordInput && passwordIcon) {
+        toggleBtn.addEventListener('click', () => {
+          const isPassword = passwordInput.getAttribute('type') === 'password';
+          passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+          passwordIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+        });
+      }
+    });
+  </script>
+</body></html>

@@ -96,12 +96,12 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-card text-card-foreground border border-border shadow-2xl rounded-3xl w-full max-w-lg p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/25 dark:bg-black/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-lg p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
         {/* Modal Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -111,18 +111,18 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
               <Award className="w-5 h-5 text-amber-500" />
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
                 प्रश्नोत्तरी (Quiz Mode) • {currentIndex + 1} / {questionsToUse.length}
               </span>
             </div>
 
             {/* Concept Tag */}
-            <span className="inline-block px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
+            <span className="inline-block px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 text-xs font-semibold rounded-full mb-3">
               {currentQ.nodeLabel}
             </span>
 
             {/* Question Text */}
-            <h3 className="text-base sm:text-lg font-bold text-foreground leading-relaxed mb-4">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-relaxed mb-4 font-sans">
               {currentQ.question}
             </h3>
 
@@ -132,15 +132,15 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
                 const isSelected = selectedOption === idx;
                 const isCorrect = idx === currentQ.correctAnswerIndex;
 
-                let optionClass = 'bg-muted/50 border-border hover:bg-muted text-foreground';
+                let optionClass = 'bg-slate-50/80 border-slate-200/80 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100';
 
                 if (isAnswered) {
                   if (isCorrect) {
-                    optionClass = 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold';
+                    optionClass = 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 text-emerald-800 dark:text-emerald-300 font-medium';
                   } else if (isSelected && !isCorrect) {
-                    optionClass = 'bg-destructive/15 border-destructive text-destructive font-semibold';
+                    optionClass = 'bg-red-50 dark:bg-red-950/30 border-red-500 text-red-800 dark:text-red-300 font-medium';
                   } else {
-                    optionClass = 'bg-muted/30 border-border/50 text-muted-foreground opacity-60';
+                    optionClass = 'bg-slate-50/40 border-slate-200/40 dark:bg-slate-800/20 dark:border-slate-800 text-slate-400 opacity-60';
                   }
                 }
 
@@ -150,13 +150,13 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
                     disabled={isAnswered}
                     onClick={() => handleSelectOption(idx)}
                     className={cn(
-                      'w-full text-left p-3.5 rounded-2xl border text-xs sm:text-sm transition-all flex items-center justify-between gap-2',
+                      'w-full text-left p-3.5 rounded-xl border text-xs sm:text-sm transition-all flex items-center justify-between gap-2 active:scale-[0.99]',
                       optionClass
                     )}
                   >
                     <span>{option}</span>
                     {isAnswered && isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
-                    {isAnswered && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-destructive shrink-0" />}
+                    {isAnswered && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
                   </button>
                 );
               })}
@@ -164,8 +164,8 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
 
             {/* Answer Explanation */}
             {isAnswered && (
-              <div className="p-3.5 bg-accent/60 border border-accent rounded-2xl mb-6 text-xs text-foreground/90 leading-relaxed">
-                <span className="font-semibold block mb-1 text-primary">स्पष्टीकरण (Explanation):</span>
+              <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl mb-6 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                <span className="font-semibold block mb-1 text-blue-600 dark:text-blue-400">स्पष्टीकरण (Explanation):</span>
                 {currentQ.explanation}
               </div>
             )}
@@ -174,7 +174,7 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
             {isAnswered && (
               <button
                 onClick={handleNext}
-                className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md hover:opacity-90 transition-opacity"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 text-sm shadow-xs transition-all active:scale-[0.98]"
               >
                 <span>{currentIndex + 1 < questionsToUse.length ? 'अगला प्रश्न' : 'परिणाम देखें'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -188,24 +188,24 @@ export const MindMapQuizModal: React.FC<MindMapQuizModalProps> = ({
               <Award className="w-8 h-8" />
             </div>
 
-            <h3 className="text-xl font-bold text-foreground mb-2">अभ्यास पूर्ण हुआ!</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              आपने {questionsToUse.length} में से <span className="font-bold text-primary">{score}</span> प्रश्नों का सही उत्तर दिया।
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">अभ्यास पूर्ण हुआ!</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              आपने {questionsToUse.length} में से <span className="font-bold text-blue-600 dark:text-blue-400">{score}</span> प्रश्नों का सही उत्तर दिया।
             </p>
 
             <div className="flex gap-3">
               <button
                 onClick={handleRestart}
-                className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-semibold rounded-2xl flex items-center justify-center gap-1.5 text-xs hover:bg-muted transition-colors"
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-medium rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all active:scale-95"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span>पुनः प्रयास करें</span>
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 bg-primary text-primary-foreground font-semibold rounded-2xl text-xs hover:opacity-90 transition-opacity"
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-xs transition-all shadow-xs active:scale-95"
               >
-                समाप्त करें
+                समाप्त
               </button>
             </div>
           </div>

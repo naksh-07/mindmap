@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atlas Knowledge Graph — Mind Map Workspace</title>
+<!-- Google Fonts: Geist & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined (Exact literal glyph linkage per spec) -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim from Design System -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed": "#2f1500",
+            "surface-container-low": "#f2f3ff",
+            "outline": "#737686",
+            "tertiary-container": "#a65900",
+            "on-primary-fixed-variant": "#003ea8",
+            "primary-container": "#2563eb",
+            "on-surface-variant": "#434655",
+            "on-primary-container": "#eeefff",
+            "tertiary-fixed-dim": "#ffb77d",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#85f8c4",
+            "primary": "#004ac6",
+            "on-secondary-container": "#00714e",
+            "inverse-surface": "#283044",
+            "outline-variant": "#c3c6d7",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "background": "#faf8ff",
+            "on-error-container": "#93000a",
+            "surface": "#faf8ff",
+            "secondary": "#006c4a",
+            "tertiary-fixed": "#ffdcc3",
+            "on-secondary-fixed": "#002114",
+            "primary-fixed": "#dbe1ff",
+            "surface-bright": "#faf8ff",
+            "surface-container": "#eaedff",
+            "surface-tint": "#0053db",
+            "tertiary": "#824500",
+            "on-surface": "#131b2e",
+            "on-primary-fixed": "#00174b",
+            "surface-container-high": "#e2e7ff",
+            "inverse-primary": "#b4c5ff",
+            "on-primary": "#ffffff",
+            "surface-container-highest": "#dae2fd",
+            "inverse-on-surface": "#eef0ff",
+            "surface-container-lowest": "#ffffff",
+            "on-background": "#131b2e",
+            "on-secondary": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-tertiary-container": "#ffede1",
+            "surface-dim": "#d2d9f4",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "primary-fixed-dim": "#b4c5ff",
+            "secondary-container": "#82f5c1",
+            "secondary-fixed-dim": "#68dba9",
+            "surface-variant": "#dae2fd"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "margin": "2rem",
+            "space-lg": "1.25rem",
+            "gutter-mobile": "0.75rem",
+            "margin-mobile": "1rem",
+            "space-sm": "0.5rem",
+            "gutter": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Geist", "sans-serif"],
+            "headline-xl-mobile": ["Geist", "sans-serif"],
+            "headline-sm": ["Geist", "sans-serif"],
+            "mono-metric": ["JetBrains Mono", "monospace"],
+            "headline-lg": ["Geist", "sans-serif"],
+            "label-sm": ["JetBrains Mono", "monospace"],
+            "body-sm": ["Geist", "sans-serif"],
+            "body-lg": ["Geist", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"],
+            "label-md": ["JetBrains Mono", "monospace"],
+            "headline-xl": ["Geist", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "500" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "mono-metric": ["13px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    /* Architectural Draftsman Dot-Grid Background Canvas */
+    .bg-dot-grid {
+      background-color: #F8FAFC;
+      background-image: radial-gradient(#CBD5E1 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    /* Ambient Occlusion Level 2 */
+    .ambient-card-shadow {
+      box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 1px 2px 0 rgba(15, 23, 42, 0.02);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #E2E8F0;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #CBD5E1;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden h-screen flex flex-col font-body-md text-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- ========================================================================= -->
+<!-- 1. MANDATED SHARED COMPONENT: TopNavBar                                   -->
+<!-- ========================================================================= -->
+<header class="bg-surface-container-lowest/80 dark:bg-inverse-surface/80 backdrop-blur-md flex justify-between items-center w-full px-6 py-2 border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none z-40 relative">
+<!-- Left: Brand & Search bar -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-lg bg-primary-container text-white flex items-center justify-center font-mono-metric font-semibold text-xs tracking-tighter">
+          AG
+        </div>
+<span class="text-headline-sm font-headline-sm text-on-surface dark:text-inverse-on-surface tracking-tight">
+          Atlas Knowledge Graph
+        </span>
+</div>
+<!-- Search Input with Keyboard Badge -->
+<div class="relative flex items-center">
+<div class="absolute left-2.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</div>
+<input class="h-8 pl-8 pr-12 w-64 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" placeholder="Search entities, topics, linkages..." type="text"/>
+<div class="absolute right-2 flex items-center gap-1 text-label-sm font-label-sm text-outline border border-outline-variant bg-surface-container-low px-1.5 py-0.5 rounded">
+<span>⌘</span><span>K</span>
+</div>
+</div>
+</div>
+<!-- Center Navigation Links (Exact Casing & Items from JSON) -->
+<!-- Active Destination Logic: Mind Map screen directly maps to 'Graph' -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed font-medium pb-1 text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99]" href="#graph">
+        Graph
+      </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99]" href="#outline">
+        Outline
+      </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99]" href="#timeline">
+        Timeline
+      </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface font-normal text-label-md font-label-md transition-all duration-150 ease-out active:scale-[0.99]" href="#analytics">
+        Analytics
+      </a>
+</nav>
+<!-- Trailing Actions & Icons from JSON Blueprint -->
+<div class="flex items-center gap-2">
+<!-- Icon Actions Group (zoom_in, zoom_out, fit_screen, tune) -->
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest p-0.5">
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all duration-150" title="Zoom in">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all duration-150" title="Zoom out">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all duration-150" title="Fit screen">
+<span class="material-symbols-outlined text-[18px]">fit_screen</span>
+</button>
+<div class="w-px h-3.5 bg-outline-variant mx-1"></div>
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all duration-150" title="Tune view">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Secondary Trailing Action: Active Recall -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-body-sm text-tertiary-container bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-lg transition-all duration-150 active:scale-[0.99]">
+<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+<span class="font-medium">Active Recall</span>
+</button>
+<!-- Primary Trailing Action: Quiz -->
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 text-body-sm font-body-sm text-white bg-primary-container hover:bg-primary rounded-lg transition-all duration-150 active:scale-[0.99] font-medium">
+<span class="material-symbols-outlined text-[16px]">school</span>
+<span>Quiz</span>
+</button>
+<div class="h-4 w-px bg-outline-variant mx-1"></div>
+<!-- User Profile Avatar -->
+<div class="relative cursor-pointer group" title="User workspace profile avatar">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center text-on-surface text-label-sm font-label-sm font-medium group-hover:border-primary-container transition-all">
+          AV
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- 2. MAIN WORKSPACE CANVAS WITH FLOATING HUD & EXPANDED MIND MAP            -->
+<!-- ========================================================================= -->
+<main class="flex-1 relative overflow-hidden flex">
+<!-- Canvas Drafting Area (Full viewport minus drawer) -->
+<div class="flex-1 relative h-full bg-dot-grid overflow-hidden flex flex-col justify-between">
+<!-- FLOATING HUD TOOLBAR DOCK (Centered top of canvas) -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+<div class="flex items-center gap-2 bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline-variant shadow-sm transition-all">
+<!-- Node Counter Indicator -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded-full border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-mono-metric">14/50 Nodes Visible</span>
+</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<!-- Segmented Control Pills -->
+<div class="flex items-center bg-surface-container-low p-0.5 rounded-lg border border-outline-variant">
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest shadow-sm text-body-sm font-body-sm font-medium text-on-surface">
+<span class="material-symbols-outlined text-[15px] text-primary-container">account_tree</span>
+<span>Layout: Balanced</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded text-body-sm font-body-sm text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[15px]">database</span>
+<span>Dataset: 50 Nodes</span>
+</button>
+</div>
+<div class="w-px h-4 bg-outline-variant"></div>
+<!-- Viewport Quick Buttons -->
+<div class="flex items-center gap-0.5">
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-all" title="Center root">
+<span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
+</button>
+<button class="p-1.5 text-tertiary-container hover:bg-surface-container-low rounded-lg transition-all" title="Unreviewed Cards">
+<span class="material-symbols-outlined text-[18px]">neurology</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ===================================================================== -->
+<!-- CENTRAL INFINITE CANVAS MIND MAP (Tectonic SVG & Node Architecture)   -->
+<!-- ===================================================================== -->
+<div class="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden flex items-center justify-center">
+<!-- SVG Vector Connection Architecture -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="dot-marker" markerheight="6" markerwidth="6" refx="3" refy="3">
+<circle cx="3" cy="3" fill="#94A3B8" r="2"></circle>
+</marker>
+<marker id="active-dot-marker" markerheight="8" markerwidth="8" refx="4" refy="4">
+<circle cx="4" cy="4" fill="#2563EB" r="3"></circle>
+</marker>
+</defs>
+<!-- Branch 1: Root -> Physical Divisions (Active) -->
+<path d="M 270 340 C 350 340, 360 230, 440 230" fill="none" marker-end="url(#active-dot-marker)" marker-start="url(#active-dot-marker)" stroke="#2563EB" stroke-width="2"></path>
+<!-- Branch 2: Root -> River Systems -->
+<path d="M 270 340 C 350 340, 360 380, 440 380" fill="none" marker-end="url(#dot-marker)" marker-start="url(#dot-marker)" stroke="#94A3B8" stroke-dasharray="3 3" stroke-width="1.5"></path>
+<!-- Branch 3: Root -> Climate & Monsoon -->
+<path d="M 270 340 C 350 340, 360 490, 440 490" fill="none" marker-end="url(#dot-marker)" marker-start="url(#dot-marker)" stroke="#94A3B8" stroke-dasharray="3 3" stroke-width="1.5"></path>
+<!-- Sub-branches: Physical Divisions -> Children -->
+<!-- To Himalayan Ranges -->
+<path d="M 645 230 C 700 230, 710 110, 765 110" fill="none" marker-end="url(#dot-marker)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<!-- To Northern Plains -->
+<path d="M 645 230 C 700 230, 710 170, 765 170" fill="none" marker-end="url(#dot-marker)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<!-- To Peninsular Plateau -->
+<path d="M 645 230 C 700 230, 710 230, 765 230" fill="none" marker-end="url(#dot-marker)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<!-- To Coastal Plains (SELECTED NODE - HIGHLIGHTED COBALT RUNNER) -->
+<path d="M 645 230 C 700 230, 710 300, 765 300" fill="none" marker-end="url(#active-dot-marker)" stroke="#2563EB" stroke-width="2.2"></path>
+<!-- To Islands Group -->
+<path d="M 645 230 C 700 230, 710 370, 765 370" fill="none" marker-end="url(#dot-marker)" stroke="#CBD5E1" stroke-width="1.5"></path>
+</svg>
+<!-- GRAPH NODES CONTAINER -->
+<div class="relative w-[1100px] h-[640px] pointer-events-auto">
+<!-- ================= LEVEL 0: ROOT NODE ================= -->
+<div class="absolute left-[70px] top-[305px] z-20">
+<div class="w-52 bg-surface-container-lowest border-2 border-outline-variant hover:border-primary-container rounded-xl p-3.5 shadow-sm transition-all duration-150 group">
+<div class="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Core · 5 Sectors
+                </span>
+<span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary transition-colors">hub</span>
+</div>
+<div class="text-headline-sm font-headline-sm font-semibold text-on-surface">Indian Geography</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Primary Domain Ontology</div>
+</div>
+</div>
+<!-- ================= LEVEL 1: MAJOR CATEGORY NODES ================= -->
+<!-- Node 1.1: Physical Divisions (ACTIVE EXPANDED BRANCH) -->
+<div class="absolute left-[440px] top-[195px] z-20">
+<div class="w-56 bg-surface-container-lowest border border-primary-container rounded-xl p-3 ambient-card-shadow transition-all group">
+<div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high">
+<span class="text-label-sm font-label-sm text-primary font-medium">Physiography</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-mono-metric">+6 Subtopics</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-lg font-medium text-on-surface">Physical Divisions</span>
+<span class="material-symbols-outlined text-[18px] text-primary-container">unfold_less</span>
+</div>
+</div>
+</div>
+<!-- Node 1.2: River Systems -->
+<div class="absolute left-[440px] top-[345px] z-20">
+<div class="w-56 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl p-3 shadow-sm transition-all group opacity-85 hover:opacity-100">
+<div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high">
+<span class="text-label-sm font-label-sm text-outline font-medium">Hydrology</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm font-mono-metric">+4 Subtopics</span>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<div class="font-headline-sm text-body-lg font-medium text-on-surface">River Systems</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant text-xs">Himalayan &amp; Peninsular</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Node 1.3: Climate & Monsoon -->
+<div class="absolute left-[440px] top-[455px] z-20">
+<div class="w-56 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl p-3 shadow-sm transition-all group opacity-85 hover:opacity-100">
+<div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high">
+<span class="text-label-sm font-label-sm text-outline font-medium">Atmospheric</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm font-mono-metric">+3 Subtopics</span>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<div class="font-headline-sm text-body-lg font-medium text-on-surface">Climate &amp; Monsoon</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant text-xs">SW Monsoon &amp; El Niño</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-on-surface">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- ================= LEVEL 2: SUB-NODES OF PHYSICAL DIVISIONS ================= -->
+<!-- Sub-node 2.1: Himalayan Ranges -->
+<div class="absolute left-[765px] top-[88px] z-20">
+<div class="w-60 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl px-3.5 py-2 shadow-sm flex items-center justify-between transition-all group">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="text-body-md font-body-md font-medium text-on-surface">Himalayan Ranges</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">4 zones</span>
+</div>
+</div>
+<!-- Sub-node 2.2: Northern Plains -->
+<div class="absolute left-[765px] top-[148px] z-20">
+<div class="w-60 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl px-3.5 py-2 shadow-sm flex items-center justify-between transition-all group">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="text-body-md font-body-md font-medium text-on-surface">Northern Plains</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">Alluvial</span>
+</div>
+</div>
+<!-- Sub-node 2.3: Peninsular Plateau -->
+<div class="absolute left-[765px] top-[208px] z-20">
+<div class="w-60 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl px-3.5 py-2 shadow-sm flex items-center justify-between transition-all group">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="text-body-md font-body-md font-medium text-on-surface">Peninsular Plateau</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">Deccan / Malwa</span>
+</div>
+</div>
+<!-- Sub-node 2.4: Coastal Plains (SELECTED ACTIVE NODE) -->
+<div class="absolute left-[765px] top-[268px] z-30">
+<div class="w-64 bg-surface-container-lowest border-2 border-primary-container rounded-xl p-3 shadow-md ring-4 ring-primary-container/10 transition-all scale-[1.02]">
+<div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-outline-variant">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-primary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping"></span>
+                  Selected · High Weightage
+                </span>
+<span class="text-label-sm font-label-sm bg-secondary-fixed text-on-secondary-fixed-variant px-1.5 py-0.2 rounded font-mono-metric">82% Recalled</span>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<div class="text-body-lg font-headline-sm font-semibold text-on-surface">Coastal Plains</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant font-mono-metric">Littoral Geomorphology</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-primary-container">verified</span>
+</div>
+</div>
+</div>
+<!-- Sub-node 2.5: Islands Group -->
+<div class="absolute left-[765px] top-[352px] z-20">
+<div class="w-60 bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl px-3.5 py-2 shadow-sm flex items-center justify-between transition-all group">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="text-body-md font-body-md font-medium text-on-surface">Islands Group</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">Andaman &amp; Laksh.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- CANVAS BOTTOM VIEWPORT DOCK (Floating bottom left) -->
+<div class="absolute bottom-4 left-6 z-30 flex items-center gap-2">
+<div class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 shadow-sm text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">location_searching</span>
+<span class="text-on-surface-variant font-mono-metric text-xs">Root &gt; Physical Divisions &gt; <strong class="text-primary font-semibold">Coastal Plains</strong></span>
+</div>
+<div class="flex items-center bg-surface-container-lowest border border-outline-variant rounded-lg p-0.5 shadow-sm">
+<button class="p-1 hover:bg-surface-container-low text-on-surface-variant rounded transition-all" title="Toggle Mini-map">
+<span class="material-symbols-outlined text-[16px]">map</span>
+</button>
+<button class="p-1 hover:bg-surface-container-low text-on-surface-variant rounded transition-all" title="Reset Viewport">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- 3. RIGHT SLIDE-OVER INSPECTOR DRAWER (Width 360px)                         -->
+<!-- ========================================================================= -->
+<aside class="w-[360px] h-full bg-surface-container-lowest border-l border-outline-variant z-40 flex flex-col justify-between shadow-sm overflow-hidden flex-shrink-0">
+<!-- Drawer Top Scrollable Area -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+<!-- Breadcrumb lineage & Close button -->
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant">
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-outline tracking-wider font-mono-metric">
+<span>GEO</span>
+<span>&gt;</span>
+<span>PHYSICAL</span>
+<span>&gt;</span>
+<span class="text-primary font-semibold">COASTAL</span>
+</div>
+<button class="p-1 text-outline hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-all" title="Close Panel">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Node Title and Domain Context -->
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm font-medium">UPSC Prelims &amp; Mains</span>
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed text-label-sm font-label-sm font-medium">High Yield</span>
+</div>
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface leading-tight">
+            Coastal Plains (तटीय मैदान)
+          </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+            Eastern &amp; Western Littoral Geomorphology &amp; Coastal Processes.
+          </p>
+</div>
+<!-- Primary Action CTA: Open in Obsidian -->
+<button class="w-full flex items-center justify-between px-3.5 py-2.5 bg-primary-container hover:bg-primary text-white rounded-lg transition-all duration-150 active:scale-[0.99] font-medium text-body-sm shadow-sm group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+<span>Open in Obsidian</span>
+</div>
+<kbd class="text-label-sm font-label-sm font-mono-metric bg-blue-700/60 px-1.5 py-0.5 rounded text-white/90">⌥↵</kbd>
+</button>
+<!-- Section: Key Examination Facts -->
+<div class="space-y-3 pt-2">
+<div class="flex items-center justify-between">
+<h3 class="text-label-md font-label-md text-on-surface uppercase tracking-wider font-semibold">Key Examination Facts</h3>
+<span class="text-label-sm font-label-sm text-outline font-mono-metric">3 Verified Points</span>
+</div>
+<div class="space-y-2.5">
+<!-- Fact 1 -->
+<div class="flex items-start gap-2.5 p-2.5 bg-surface-container-low/60 border border-outline-variant/70 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">check_circle</span>
+<p class="text-body-sm font-body-sm text-on-surface leading-snug">
+<strong class="font-medium text-on-surface">Western Coastal Plains:</strong> Submerged coast, narrower width (50-65km), natural harbors like Mumbai and Kochi.
+              </p>
+</div>
+<!-- Fact 2 -->
+<div class="flex items-start gap-2.5 p-2.5 bg-surface-container-low/60 border border-outline-variant/70 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">check_circle</span>
+<p class="text-body-sm font-body-sm text-on-surface leading-snug">
+<strong class="font-medium text-on-surface">Eastern Coastal Plains:</strong> Emergent coast, broad deltas formed by Mahanadi, Godavari, Krishna, and Kaveri rivers.
+              </p>
+</div>
+<!-- Fact 3 -->
+<div class="flex items-start gap-2.5 p-2.5 bg-surface-container-low/60 border border-outline-variant/70 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">check_circle</span>
+<p class="text-body-sm font-body-sm text-on-surface leading-snug">
+<strong class="font-medium text-on-surface">Backwaters &amp; Kayals:</strong> Characteristic lagoons of the Malabar Coast (e.g., Vembanad Lake &amp; Ashtamudi).
+              </p>
+</div>
+</div>
+</div>
+<!-- Section: Node Attributes Matrix (2-column key-value grid) -->
+<div class="space-y-2 pt-2 border-t border-outline-variant">
+<h3 class="text-label-md font-label-md text-on-surface uppercase tracking-wider font-semibold">Node Attributes</h3>
+<div class="grid grid-cols-2 gap-2 text-body-sm">
+<div class="p-2 border border-outline-variant rounded-lg bg-surface-container-lowest">
+<div class="text-label-sm font-label-sm text-outline">Classification</div>
+<div class="font-mono-metric text-on-surface font-medium text-xs mt-0.5">Littoral Zone</div>
+</div>
+<div class="p-2 border border-outline-variant rounded-lg bg-surface-container-lowest">
+<div class="text-label-sm font-label-sm text-outline">Revision Status</div>
+<div class="font-mono-metric text-secondary font-medium text-xs mt-0.5">Mastered 82%</div>
+</div>
+<div class="p-2 border border-outline-variant rounded-lg bg-surface-container-lowest">
+<div class="text-label-sm font-label-sm text-outline">Cross-links</div>
+<div class="font-mono-metric text-on-surface font-medium text-xs mt-0.5">4 Nodes</div>
+</div>
+<div class="p-2 border border-outline-variant rounded-lg bg-surface-container-lowest">
+<div class="text-label-sm font-label-sm text-outline">Last Studied</div>
+<div class="font-mono-metric text-on-surface font-medium text-xs mt-0.5">Today (14m ago)</div>
+</div>
+</div>
+</div>
+<!-- Section: Linked Concepts Tags -->
+<div class="space-y-2 pt-2 border-t border-outline-variant">
+<h3 class="text-label-md font-label-md text-on-surface uppercase tracking-wider font-semibold">Linked Concepts</h3>
+<div class="flex flex-wrap gap-1.5">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-low border border-outline-variant hover:border-outline text-body-sm font-body-sm text-on-surface cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[13px] text-outline">link</span>
+              Western Ghats
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-low border border-outline-variant hover:border-outline text-body-sm font-body-sm text-on-surface cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[13px] text-outline">link</span>
+              Mangrove Ecosystems
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-low border border-outline-variant hover:border-outline text-body-sm font-body-sm text-on-surface cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[13px] text-outline">link</span>
+              Monsoon Rainshadow
+            </span>
+</div>
+</div>
+</div>
+<!-- Drawer Bottom Practice Recall Action Card -->
+<div class="p-4 border-t border-outline-variant bg-surface-container-low/40">
+<button class="w-full flex items-center justify-between p-3 border border-outline-variant hover:border-primary-container bg-surface-container-lowest hover:bg-surface-container-low rounded-xl transition-all duration-150 group">
+<div class="flex items-center gap-3 text-left">
+<!-- Progress Ring (SVG) -->
+<div class="relative w-8 h-8 flex items-center justify-center shrink-0">
+<svg class="w-8 h-8 -rotate-90" viewbox="0 0 36 36">
+<circle cx="18" cy="18" fill="none" r="14" stroke="#E2E8F0" stroke-width="3"></circle>
+<circle cx="18" cy="18" fill="none" r="14" stroke="#2563EB" stroke-dasharray="88" stroke-dashoffset="22" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[10px] font-mono-metric font-semibold text-primary">6/8</span>
+</div>
+<div>
+<div class="text-body-sm font-body-sm font-medium text-on-surface group-hover:text-primary transition-colors">Start Practice Recall Quiz</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant font-mono-metric">8 Spaced Repetition Cards</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">play_arrow</span>
+</button>
+</div>
+</aside>
+</main>
+</body></html>

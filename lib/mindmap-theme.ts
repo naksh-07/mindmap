@@ -1,15 +1,15 @@
 import { MindMapNode } from './types/mindmap';
 
-// Curated theme color palettes for NotebookLM style visual harmony
+// Curated theme color palettes for Modern Minimal Light visual harmony (DESIGN.md)
 export const DEFAULT_BRANCH_PALETTE = [
-  '#d97706', // Amber Gold (Branch 0)
-  '#059669', // Emerald Green (Branch 1)
-  '#2563eb', // Royal Blue (Branch 2)
-  '#7c3aed', // Purple Violet (Branch 3)
-  '#e11d48', // Rose Pink (Branch 4)
-  '#0284c7', // Sky Blue (Branch 5)
-  '#ea580c', // Dark Orange (Branch 6)
-  '#0891b2', // Teal Cyan (Branch 7)
+  '#2563eb', // Ceramic Cobalt (Branch 0)
+  '#059669', // Forest Jade (Branch 1)
+  '#d97706', // Amber Ochre (Branch 2)
+  '#7c3aed', // Slate Plum (Branch 3)
+  '#475569', // Neutral Graphite (Branch 4)
+  '#0284c7', // Sky Slate (Branch 5)
+  '#ea580c', // Warm Ochre (Branch 6)
+  '#0891b2', // Teal Slate (Branch 7)
 ];
 
 /**

@@ -93,7 +93,7 @@ export function measureNodeDimensions(
 
   if (depth === 0) {
     // Root Node (Hero Anchor)
-    labelFont = 'bold 17px "Noto Sans Devanagari", "Inter", system-ui, sans-serif';
+    labelFont = 'bold 17px "Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif';
     labelLineHeight = 23;
     maxTextWidth = 260;
     minCardWidth = 220;
@@ -101,7 +101,7 @@ export function measureNodeDimensions(
     minCardHeight = 62;
   } else if (depth === 1) {
     // Primary Major Branch (Pill Container)
-    labelFont = '600 14px "Noto Sans Devanagari", "Inter", system-ui, sans-serif';
+    labelFont = '600 14px "Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif';
     labelLineHeight = 19;
     maxTextWidth = 210;
     minCardWidth = 170;
@@ -109,7 +109,7 @@ export function measureNodeDimensions(
     minCardHeight = 48;
   } else if (depth === 2) {
     // Sub-concept Node (Compact Card)
-    labelFont = '500 13px "Noto Sans Devanagari", "Inter", system-ui, sans-serif';
+    labelFont = '500 13px "Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif';
     labelLineHeight = 17;
     maxTextWidth = 180;
     minCardWidth = 140;
@@ -117,7 +117,7 @@ export function measureNodeDimensions(
     minCardHeight = 40;
   } else {
     // Leaf Node (Frameless Minimal Text Label - Depth 3+)
-    labelFont = '400 12px "Noto Sans Devanagari", "Inter", system-ui, sans-serif';
+    labelFont = '400 12px "Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif';
     labelLineHeight = 16;
     maxTextWidth = 160;
     minCardWidth = 120;
@@ -131,7 +131,7 @@ export function measureNodeDimensions(
   // Subtitle height calculation (BUG-007 Fix: Clamped to 1 line matching CSS line-clamp-1)
   let subtitleHeight = 0;
   if (subtitleText.length > 0) {
-    const subtitleFont = '400 11px "Noto Sans Devanagari", "Inter", system-ui, sans-serif';
+    const subtitleFont = '400 11px "Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif';
     const subRes = calculateTextLines(subtitleText, subtitleFont, maxTextWidth, forceFallback);
     subtitleHeight = Math.min(1, subRes.lineCount) * 13 + 3; // 13px line height + 3px margin top
   }
