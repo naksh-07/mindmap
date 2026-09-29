@@ -36,6 +36,7 @@ export default function MindMapPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [quizInitialNodeId, setQuizInitialNodeId] = useState<string | null>(null);
+  const [gridStyle, setGridStyle] = useState<'dots' | 'clean'>('dots');
 
   // Web font load readiness listener (BUG-011 Fix)
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -557,10 +558,12 @@ export default function MindMapPage() {
         onToggleCollapseAll={handleToggleCollapseAll}
         matchCount={matchCount}
         totalNodes={totalNodeCount}
+        gridStyle={gridStyle}
+        onToggleGridStyle={() => setGridStyle(gridStyle === 'dots' ? 'clean' : 'dots')}
       />
 
-      {/* Main Mind Map Canvas Stage with Scandinavian Dot Grid */}
-      <div className="flex-1 w-full h-full relative overflow-hidden canvas-dots bg-background">
+      {/* Main Mind Map Canvas Stage with Hardware WebGL Dynamic Grid */}
+      <div className="flex-1 w-full h-full relative overflow-hidden bg-background">
         <MindMapWebGLCanvas
           nodes={positionedNodes}
           connectors={connectors}
@@ -572,25 +575,26 @@ export default function MindMapPage() {
           isActiveRecall={isActiveRecall}
           revealedNodeIds={revealedNodeIds}
           theme={theme}
+          gridStyle={gridStyle}
           onSelectNode={setSelectedNodeId}
           onToggleCollapse={handleToggleCollapse}
           onToggleReveal={handleToggleReveal}
         />
 
         {/* Bottom Canvas HUD: Breadcrumbs & Telemetry */}
-        <footer className="absolute bottom-3.5 left-4 sm:left-6 z-20 pointer-events-none flex items-center gap-2">
+        <footer className="absolute bottom-2 sm:bottom-3.5 left-2 sm:left-6 z-20 pointer-events-none flex items-center gap-2 max-w-[calc(100vw-16px)] sm:max-w-none">
           {/* Breadcrumb Path to Current Focus */}
-          <div className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-xs text-xs text-slate-600 dark:text-slate-400 font-sans">
+          <div className="pointer-events-auto flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-xs text-xs text-slate-600 dark:text-slate-400 font-sans max-w-full overflow-hidden">
             <FolderOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
             {lineagePath.length > 0 ? (
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-1 flex-wrap overflow-hidden">
                 {lineagePath.map((item, idx) => (
                   <React.Fragment key={item.id}>
                     {idx > 0 && <span className="text-slate-300 dark:text-slate-600">/</span>}
                     <span
                       onClick={() => setSelectedNodeId(item.id)}
                       className={cn(
-                        'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors',
+                        'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[110px] sm:max-w-none',
                         idx === lineagePath.length - 1 ? 'font-semibold text-slate-900 dark:text-slate-100' : ''
                       )}
                     >
@@ -602,7 +606,7 @@ export default function MindMapPage() {
             ) : (
               <span
                 onClick={() => setSelectedNodeId(mindMapData.root.id)}
-                className="font-medium text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="font-medium text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[220px] sm:max-w-none"
                 title="क्लिक करके रूट नोड इंस्पेक्टर खोलें"
               >
                 {mindMapData.title}

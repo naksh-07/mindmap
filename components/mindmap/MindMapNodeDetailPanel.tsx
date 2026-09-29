@@ -66,21 +66,35 @@ export const MindMapNodeDetailPanel: React.FC<MindMapNodeDetailPanelProps> = ({
   const nodeLevel = lineagePath.length <= 1 ? 'Root Axis' : lineagePath.length === 2 ? 'Category' : 'Sub-Concept';
 
   return (
-    <aside
-      role="dialog"
-      aria-label={`${node.label} details`}
-      onTouchStart={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
-      onTouchEnd={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
-      style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
-      className="fixed top-12 bottom-0 right-0 w-full sm:w-[380px] lg:w-[410px] z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-l border-slate-200/80 dark:border-slate-800 shadow-2xl flex flex-col overflow-y-auto select-none transition-all duration-300 ease-out animate-in slide-in-from-right-4"
-    >
-      {/* Mobile Swipe Bar (<sm:) */}
-      <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+    <>
+      {/* Mobile Backdrop Overlay (<sm) */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 sm:hidden transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Top Header Section: Breadcrumbs, Status Chips, Title, Close Button */}
-      <div className="p-5 border-b border-slate-200/70 dark:border-slate-800 space-y-3 shrink-0">
+      <aside
+        role="dialog"
+        aria-label={`${node.label} details`}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
+        className={cn(
+          'fixed z-50 bg-white/98 dark:bg-slate-900/98 backdrop-blur-md shadow-2xl flex flex-col overflow-y-auto select-none transition-all duration-300 ease-out',
+          // Mobile: Bottom Sheet docked to bottom
+          'inset-x-0 bottom-0 max-h-[75vh] rounded-t-2xl border-t border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-6',
+          // Desktop: Right Drawer docked to top-12
+          'sm:top-12 sm:bottom-0 sm:right-0 sm:left-auto sm:w-[380px] lg:w-[410px] sm:max-h-none sm:rounded-none sm:border-t-0 sm:border-l sm:slide-in-from-right-4'
+        )}
+      >
+        {/* Mobile Drag Pill */}
+        <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+
+        {/* Top Header Section: Breadcrumbs, Status Chips, Title, Close Button */}
+        <div className="p-4 sm:p-5 border-b border-slate-200/70 dark:border-slate-800 space-y-3 shrink-0">
         {/* Breadcrumb Trail */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center flex-wrap gap-1 text-[11px] font-mono text-slate-400 dark:text-slate-500">
@@ -329,5 +343,6 @@ export const MindMapNodeDetailPanel: React.FC<MindMapNodeDetailPanelProps> = ({
         )}
       </div>
     </aside>
+    </>
   );
 };

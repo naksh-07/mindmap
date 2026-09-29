@@ -22,6 +22,8 @@ import {
   Network,
   EyeOff,
   FolderTree,
+  ArrowLeft,
+  Grid,
 } from 'lucide-react';
 import { LayoutMode } from '@/lib/types/mindmap';
 import { cn } from '@/lib/utils';
@@ -44,6 +46,8 @@ interface MindMapToolbarProps {
   onToggleCollapseAll: () => void;
   matchCount: number;
   totalNodes: number;
+  gridStyle?: 'dots' | 'clean';
+  onToggleGridStyle?: () => void;
 }
 
 export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
@@ -64,11 +68,14 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
   onToggleCollapseAll,
   matchCount,
   totalNodes,
+  gridStyle = 'dots',
+  onToggleGridStyle,
 }) => {
   const containerToolbarRef = React.useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showDatasetMenu, setShowDatasetMenu] = React.useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = React.useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
 
   // Sync fullscreen state with native browser event
   React.useEffect(() => {
@@ -79,20 +86,24 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Keyboard shortcut listener for Cmd/Ctrl+K search focus and Cmd/Ctrl+Enter
+  // Global keyboard shortcuts (⌘K for search, Escape to close dropdowns)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         const searchInput = document.getElementById('mindmap-search-input');
-        searchInput?.focus();
+        if (searchInput) {
+          searchInput.focus();
+        } else {
+          setIsMobileSearchOpen(true);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Dismiss open dropdown menus on outside-click or Escape key
+  // Close menus on outside click or escape
   React.useEffect(() => {
     const handleDocumentMouseDown = (e: MouseEvent) => {
       if (containerToolbarRef.current && !containerToolbarRef.current.contains(e.target as Node)) {
@@ -105,6 +116,7 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
       if (e.key === 'Escape') {
         setShowDatasetMenu(false);
         setShowOverflowMenu(false);
+        setIsMobileSearchOpen(false);
       }
     };
 
@@ -150,13 +162,61 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
     return datasetKey;
   }, [datasetKey]);
 
+  // Mobile Active Search View
+  if (isMobileSearchOpen) {
+    return (
+      <header
+        ref={containerToolbarRef}
+        className="w-full h-12 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 flex items-center gap-2 z-30 shrink-0 select-none shadow-xs"
+      >
+        <button
+          onClick={() => {
+            setIsMobileSearchOpen(false);
+            onSearchChange('');
+          }}
+          aria-label="Back from search"
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+
+        <div className="relative flex-1 flex items-center">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+          <input
+            id="mindmap-search-input"
+            type="text"
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search mind map concepts"
+            placeholder="अवधारणा खोजें (Search)..."
+            className="w-full h-8 pl-8 pr-16 rounded-lg bg-slate-100/90 dark:bg-slate-800/80 border border-blue-500/60 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none font-sans"
+          />
+          {searchQuery && (
+            <div className="absolute right-2 flex items-center gap-1">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60">
+                {matchCount}/{totalNodes}
+              </span>
+              <button
+                onClick={() => onSearchChange('')}
+                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header
       ref={containerToolbarRef}
-      className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-2 flex items-center justify-between z-30 shrink-0 select-none shadow-xs transition-colors duration-150"
+      className="w-full h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 flex items-center justify-between z-30 shrink-0 select-none shadow-xs transition-colors duration-150"
     >
-      {/* Left: Brand Anchor, Dataset Selector & Search */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+      {/* Left: Brand Anchor & Universal Dataset Selector */}
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         {/* Brand Anchor */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
@@ -167,21 +227,21 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           </span>
         </div>
 
-        {/* Dataset Scale Selector Dropdown */}
+        {/* Dataset Scale Selector Dropdown (Accessible on Mobile & Desktop) */}
         {onChangeDatasetKey && (
-          <div className="relative hidden lg:block shrink-0">
+          <div className="relative shrink-0">
             <button
               onClick={() => setShowDatasetMenu(!showDatasetMenu)}
               aria-label="Select test dataset scale"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 border border-slate-200/60 dark:border-slate-700/60 rounded-md transition-colors"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 bg-slate-100/90 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/80 rounded-md transition-colors max-w-[130px] sm:max-w-none"
             >
-              <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{datasetDisplayName}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="truncate">{datasetDisplayName}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {showDatasetMenu && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 max-h-[60vh] overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1.5 w-64 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 max-h-[60vh] overflow-y-auto">
                 <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
                   Example Datasets
                 </div>
@@ -236,8 +296,8 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           </div>
         )}
 
-        {/* Quick Search Bar (search_bar with ⌘K badge) */}
-        <div className="relative flex items-center flex-1 max-w-xs sm:max-w-sm">
+        {/* Desktop Quick Search Bar */}
+        <div className="relative hidden md:flex items-center w-48 lg:w-64">
           <Search className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
           <input
             id="mindmap-search-input"
@@ -274,8 +334,8 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
         )}
       </div>
 
-      {/* Center: Layout Mode Segmented Control (Google Stitch Segmented Pill) */}
-      <div className="hidden md:flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 mx-3">
+      {/* Center: Layout Mode Segmented Control (Desktop) */}
+      <div className="hidden lg:flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 mx-2">
         {[
           { mode: 'balanced', label: 'Balanced', icon: LayoutGrid },
           { mode: 'horizontal', label: 'Tree', icon: GitFork },
@@ -301,9 +361,18 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
         })}
       </div>
 
-      {/* Right Controls: Viewport Actions, Active Recall, Quiz, Theme */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Trailing Icon Actions Group: Zoom & Fit to Screen */}
+      {/* Right Controls: Mobile Search, Viewport, Active Recall, Quiz, Theme & Overflow */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Mobile Search Trigger Icon (<md) */}
+        <button
+          onClick={() => setIsMobileSearchOpen(true)}
+          aria-label="Search mind map concepts"
+          className="md:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-700"
+        >
+          <Search className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Viewport Zoom & Fit Actions (Desktop) */}
         <div className="hidden sm:flex items-center border border-slate-200/80 dark:border-slate-700/80 rounded-lg p-0.5 bg-white/80 dark:bg-slate-800/80 shadow-2xs">
           <button
             onClick={() => triggerZoom('in')}
@@ -342,6 +411,21 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
               <ChevronUp className="w-3.5 h-3.5" />
             )}
           </button>
+          {onToggleGridStyle && (
+            <button
+              onClick={onToggleGridStyle}
+              className={cn(
+                'p-1 rounded transition-all duration-150 active:scale-95',
+                gridStyle === 'dots'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700'
+              )}
+              title={gridStyle === 'dots' ? 'बैकग्राउंड ग्रिड छुपाएं (Clean Slate)' : 'बैकग्राउंड डॉट ग्रिड दिखाएं (Dot Grid)'}
+              aria-label="Toggle Background Grid"
+            >
+              <Grid className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={toggleFullscreen}
             className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all duration-150 active:scale-95"
@@ -352,15 +436,13 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           </button>
         </div>
 
-        <div className="hidden sm:block h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
-
         {/* Secondary Action: Active Recall Mode Toggle */}
         <button
           onClick={onToggleActiveRecall}
           aria-label="Toggle Active Recall study mode"
           title="एक्टिव रीकॉल (Active Recall Mode)"
           className={cn(
-            'h-8 px-2.5 sm:px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all duration-150 ease-out active:scale-95 shadow-2xs',
+            'h-8 px-2 sm:px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all duration-150 ease-out active:scale-95 shadow-2xs',
             isActiveRecall
               ? 'bg-amber-500 text-white border-amber-600 font-semibold shadow-xs ring-2 ring-amber-500/20'
               : 'border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -378,15 +460,15 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           className="h-8 px-2.5 sm:px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center gap-1.5 transition-all duration-150 ease-out active:scale-95 shadow-xs"
         >
           <Award className="w-3.5 h-3.5" />
-          <span>Quiz</span>
+          <span className="hidden xs:inline sm:inline">Quiz</span>
         </button>
 
-        {/* Theme Toggle Button */}
+        {/* Theme Toggle Button (Desktop) */}
         <button
           onClick={onToggleTheme}
           aria-label="Toggle dark/light theme"
           title={theme === 'dark' ? 'लाइट मोड (Light)' : 'डार्क मोड (Dark)'}
-          className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all active:scale-95 border border-slate-200/80 dark:border-slate-700"
+          className="hidden sm:flex p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all active:scale-95 border border-slate-200/80 dark:border-slate-700"
         >
           {theme === 'dark' ? (
             <Sun className="w-3.5 h-3.5 text-amber-400" />
@@ -395,8 +477,8 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           )}
         </button>
 
-        {/* Mobile Overflow Menu Button (<md:) */}
-        <div className="relative md:hidden">
+        {/* Mobile & Tablet Overflow Menu Button (<lg:) */}
+        <div className="relative lg:hidden">
           <button
             onClick={() => setShowOverflowMenu(!showOverflowMenu)}
             aria-label="More toolbar options"
@@ -406,15 +488,15 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
           </button>
 
           {showOverflowMenu && (
-            <div className="absolute top-full right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50 flex flex-col max-h-[80vh] overflow-y-auto">
+            <div className="absolute top-full right-0 mt-1.5 w-52 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50 flex flex-col max-h-[80vh] overflow-y-auto">
               <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                Layout
+                लेआउट (Layout)
               </div>
               {[
                 { mode: 'balanced', label: 'संतुलित (Balanced)' },
-                { mode: 'horizontal', label: 'क्षैतिज (Horizontal Tree)' },
-                { mode: 'vertical', label: 'लंबवत (Vertical Tree)' },
-                { mode: 'radial', label: 'रेडियल (Radial Hub)' },
+                { mode: 'horizontal', label: 'क्षैतिज (Tree)' },
+                { mode: 'vertical', label: 'लंबवत (Vertical)' },
+                { mode: 'radial', label: 'रेडियल (Radial)' },
               ].map(({ mode, label }) => (
                 <button
                   key={mode}
@@ -432,6 +514,9 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
               ))}
 
               <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+              <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400">
+                कैनवास नियंत्रण
+              </div>
               <button
                 onClick={() => {
                   triggerFitScreen();
@@ -440,7 +525,7 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
-                <span>Fit Screen</span>
+                <span>स्क्रीन में फ़िट (Fit)</span>
               </button>
               <button
                 onClick={() => {
@@ -449,18 +534,30 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
                 }}
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
               >
-                {hasCollapsedNodes ? <ChevronDown className="w-3.5 h-3.5 text-amber-500" /> : <ChevronUp className="w-3.5 h-3.5" />}
-                <span>{hasCollapsedNodes ? 'सभी शाखाएं खोलें' : 'समेटें'}</span>
+                {hasCollapsedNodes ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                <span>{hasCollapsedNodes ? 'सभी शाखाएं खोलें' : 'सभी शाखाएं समेटें'}</span>
               </button>
+              {onToggleGridStyle && (
+                <button
+                  onClick={() => {
+                    onToggleGridStyle();
+                    setShowOverflowMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>ग्रिड: {gridStyle === 'dots' ? 'डॉट ग्रिड (चालू)' : 'प्लेन साफ़ (चालू)'}</span>
+                </button>
+              )}
               <button
                 onClick={() => {
-                  toggleFullscreen();
+                  onToggleTheme();
                   setShowOverflowMenu(false);
                 }}
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
               >
-                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                <span>थीम: {theme === 'dark' ? 'लाइट मोड' : 'डार्क मोड'}</span>
               </button>
             </div>
           )}

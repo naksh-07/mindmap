@@ -18,6 +18,7 @@ export interface MindMapWebGLCanvasProps {
   isActiveRecall: boolean;
   revealedNodeIds: Set<string>;
   theme: 'light' | 'dark';
+  gridStyle?: 'dots' | 'clean';
   onSelectNode: (nodeId: string | null) => void;
   onToggleCollapse: (nodeId: string, e: React.MouseEvent) => void;
   onToggleReveal: (nodeId: string, e: React.MouseEvent) => void;
@@ -34,6 +35,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
   isActiveRecall,
   revealedNodeIds,
   theme,
+  gridStyle = 'dots',
   onSelectNode,
   onToggleCollapse,
   onToggleReveal,
@@ -42,7 +44,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
   const appRef = useRef<Application | null>(null);
   const viewportRef = useRef<Viewport | null>(null);
 
-  // Scene sub-containers
+  // Scene sub-containers (rendered bottom-to-top)
+  const gridLayerRef = useRef<Graphics | null>(null);
   const connectorsLayerRef = useRef<Graphics | null>(null);
   const crossLinksLayerRef = useRef<Graphics | null>(null);
   const nodesLayerRef = useRef<Container | null>(null);
@@ -51,6 +54,11 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
   const hasFittedRef = useRef<boolean>(false);
   const rootId = nodes.length > 0 ? nodes[0].id : null;
   const [isPixiReady, setIsPixiReady] = useState(false);
+
+  // Pointer tracking to distinguish pan from tap and guard against multi-touch accidental taps
+  const pointerDownRef = useRef<{ x: number; y: number; time: number; pointerId: number } | null>(null);
+  const activeTouchIdsRef = useRef<Set<number>>(new Set());
+  const hadMultiTouchRef = useRef<boolean>(false);
 
   // Node position map for fast lookups
   const nodePosMap = useMemo(() => {
@@ -77,8 +85,44 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       badgeBorder: isDark ? 0x475569 : 0xe2e8f0,
       badgeText: isDark ? '#94a3b8' : '#475569',
       crossLinkLine: 0xf59e0b,
+      gridDot: isDark ? 0x475569 : 0x94a3b8,
     };
   }, [isDark]);
+
+  // Dynamic WebGL Background Grid (Pans & Zooms in 1:1 hardware sync with camera)
+  const updateGrid = useCallback(() => {
+    const viewport = viewportRef.current;
+    const gridG = gridLayerRef.current;
+    if (!viewport || !gridG) return;
+
+    gridG.clear();
+    if (gridStyle === 'clean') return;
+
+    const scale = viewport.scale.x;
+    // Fade out dots smoothly when zoomed way out to prevent visual noise
+    if (scale < 0.22) return;
+
+    const bounds = viewport.getVisibleBounds();
+    const step = 64; // World coordinates grid step
+    const startX = Math.floor((bounds.x - step) / step) * step;
+    const endX = Math.ceil((bounds.x + bounds.width + step) / step) * step;
+    const startY = Math.floor((bounds.y - step) / step) * step;
+    const endY = Math.ceil((bounds.y + bounds.height + step) / step) * step;
+
+    // Smooth alpha fade: 0 at scale 0.22 to 0.40 at scale 0.55+
+    const alpha = Math.min(Math.max((scale - 0.22) / 0.35, 0), 1) * (isDark ? 0.35 : 0.45);
+    if (alpha <= 0.02) return;
+
+    // Maintain crisp physical point size across zoom scales (never too large, never too tiny)
+    const dotRadius = Math.max(1.1 / scale, 1.2);
+
+    for (let x = startX; x <= endX; x += step) {
+      for (let y = startY; y <= endY; y += step) {
+        gridG.circle(x, y, dotRadius);
+      }
+    }
+    gridG.fill({ color: themeColors.gridDot, alpha });
+  }, [gridStyle, isDark, themeColors.gridDot]);
 
   // Viewport Culling Engine (60 FPS optimizer)
   const updateCulling = useCallback(() => {
@@ -107,7 +151,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     });
   }, []);
 
-  // Fit view to all nodes bounding box
+  // Fit view to all nodes bounding box (Adaptive for Mobile & Desktop)
   const fitToScreen = useCallback((animate = true) => {
     const viewport = viewportRef.current;
     const container = containerRef.current;
@@ -129,7 +173,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
 
     if (minX === Infinity) return;
 
-    const padding = 80;
+    const isMobile = container.clientWidth < 640;
+    const padding = isMobile ? 36 : 72;
     const bboxWidth = maxX - minX + padding * 2;
     const bboxHeight = maxY - minY + padding * 2;
     const centerX = (minX + maxX) / 2;
@@ -137,7 +182,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
 
     const scaleX = container.clientWidth / bboxWidth;
     const scaleY = container.clientHeight / bboxHeight;
-    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.35), 1.2);
+    const minScale = isMobile ? 0.2 : 0.35;
+    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), minScale), 1.2);
 
     if (animate) {
       viewport.animate({
@@ -145,14 +191,18 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         scale: targetScale,
         time: 400,
         ease: 'easeInOutSine',
-        callbackOnComplete: updateCulling,
+        callbackOnComplete: () => {
+          updateCulling();
+          updateGrid();
+        },
       });
     } else {
       viewport.moveCenter(centerX, centerY);
       viewport.scaled = targetScale;
       updateCulling();
+      updateGrid();
     }
-  }, [nodes, updateCulling]);
+  }, [nodes, updateCulling, updateGrid]);
 
   // Reset fitted ref when root node changes
   useEffect(() => {
@@ -176,21 +226,28 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       if (!viewport) return;
       const factor = customEvent.detail?.direction === 'in' ? 1.25 : 0.8;
       const currentScale = viewport.scale.x;
-      const targetScale = Math.min(Math.max(currentScale * factor, 0.2), 3.0);
+      const targetScale = Math.min(Math.max(currentScale * factor, 0.2), 3.5);
       viewport.animate({
         scale: targetScale,
         time: 250,
         ease: 'easeInOutSine',
         callbackOnComplete: () => {
           updateCulling();
+          updateGrid();
         },
       });
     };
     window.addEventListener('mindmap:zoom', handleZoom);
     return () => window.removeEventListener('mindmap:zoom', handleZoom);
-  }, [updateCulling]);
+  }, [updateCulling, updateGrid]);
 
-  // Initialize PixiJS Application & Viewport
+  const updateCullingRef = useRef(updateCulling);
+  updateCullingRef.current = updateCulling;
+
+  const updateGridRef = useRef(updateGrid);
+  updateGridRef.current = updateGrid;
+
+  // Initialize PixiJS Application & Viewport (Runs once on mount)
   useEffect(() => {
     let isCancelled = false;
     const container = containerRef.current;
@@ -204,13 +261,17 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const width = container.clientWidth || window.innerWidth;
       const height = container.clientHeight || window.innerHeight;
 
+      // Calibrate device pixel ratio with ceiling to prevent GPU memory bloat on 4K/retina
+      const dpr = Math.min(Math.max(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5), 2.5);
+
       await app.init({
         width,
         height,
         backgroundAlpha: 0,
-        resolution: window.devicePixelRatio || 1,
+        resolution: dpr,
         autoDensity: true,
         antialias: true,
+        roundPixels: true,
       });
 
       if (isCancelled) {
@@ -238,22 +299,35 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       app.stage.addChild(viewport);
       viewportRef.current = viewport;
 
-      // Create layers in bottom-to-top rendering order
+      // 1. Dynamic WebGL Background Grid (Hardware accelerated)
+      const gridG = new Graphics();
+      viewport.addChild(gridG);
+      gridLayerRef.current = gridG;
+
+      // 2. Connectors Layer
       const connectorsG = new Graphics();
       viewport.addChild(connectorsG);
       connectorsLayerRef.current = connectorsG;
 
+      // 3. Cross-links Layer
       const crossLinksG = new Graphics();
       viewport.addChild(crossLinksG);
       crossLinksLayerRef.current = crossLinksG;
 
+      // 4. Nodes Container
       const nodesContainer = new Container();
       viewport.addChild(nodesContainer);
       nodesLayerRef.current = nodesContainer;
 
-      // Bind culling on camera movements
-      viewport.on('moved', updateCulling);
-      viewport.on('zoomed', updateCulling);
+      // Bind culling & dynamic background grid on camera movement
+      viewport.on('moved', () => {
+        updateCullingRef.current();
+        updateGridRef.current();
+      });
+      viewport.on('zoomed', () => {
+        updateCullingRef.current();
+        updateGridRef.current();
+      });
 
       setIsPixiReady(true);
     }
@@ -267,38 +341,46 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         if (width > 0 && height > 0 && appRef.current && viewportRef.current) {
           appRef.current.renderer.resize(width, height);
           viewportRef.current.resize(width, height);
-          updateCulling();
+          updateCullingRef.current();
+          updateGridRef.current();
         }
       }
     });
+
     resizeObserver.observe(container);
 
     return () => {
       isCancelled = true;
       resizeObserver.disconnect();
-      if (viewportRef.current) {
-        viewportRef.current.destroy({ children: true });
-        viewportRef.current = null;
-      }
       if (appRef.current) {
-        try {
-          appRef.current.destroy(true, { children: true, texture: true });
-        } catch (e) {
-          // ignore cleanup errors on fast refresh
-        }
+        appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
+        viewportRef.current = null;
+        gridLayerRef.current = null;
+        connectorsLayerRef.current = null;
+        crossLinksLayerRef.current = null;
+        nodesLayerRef.current = null;
+        setIsPixiReady(false);
       }
     };
-  }, []); // Mount once
+  }, []);
 
-  // Keep background transparent so CSS canvas-dots shines through
+  // Initial fit when nodes are positioned and Pixi is ready
   useEffect(() => {
-    if (appRef.current && appRef.current.renderer) {
-      appRef.current.renderer.background.alpha = 0;
+    if (isPixiReady && nodes.length > 0 && !hasFittedRef.current) {
+      fitToScreen(false);
+      hasFittedRef.current = true;
     }
-  }, [themeColors]);
+  }, [isPixiReady, nodes, fitToScreen]);
 
-  // Render Connectors Layer
+  // Redraw dynamic grid when theme or grid style changes
+  useEffect(() => {
+    if (isPixiReady) {
+      updateGrid();
+    }
+  }, [isPixiReady, gridStyle, isDark, updateGrid]);
+
+  // Render Hierarchical Connectors (Cubic Bezier Splines)
   useEffect(() => {
     if (!isPixiReady) return;
     const g = connectorsLayerRef.current;
@@ -306,54 +388,55 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
 
     g.clear();
 
-    connectors.forEach((c) => {
-      const sourceNode = nodePosMap.get(c.sourceId);
-      const depth = sourceNode ? sourceNode.depth : 1;
+    connectors.forEach((conn) => {
+      const fromNode = nodePosMap.get(conn.sourceId);
+      const toNode = nodePosMap.get(conn.targetId);
+      if (!fromNode || !toNode) return;
 
-      const isConnectedToSelected =
-        selectedNodeId !== null && (c.sourceId === selectedNodeId || c.targetId === selectedNodeId);
-      const isConnectedToLineage =
-        lineageNodeIds.has(c.sourceId) && lineageNodeIds.has(c.targetId);
-
-      const isFocusDimmed =
+      const isSelected = selectedNodeId === conn.targetId || selectedNodeId === conn.sourceId;
+      const isLineage = lineageNodeIds.has(conn.targetId) && lineageNodeIds.has(conn.sourceId);
+      const isFocused =
         focusedBranchNodeIds &&
-        focusedBranchNodeIds.size > 0 &&
-        (!focusedBranchNodeIds.has(c.sourceId) || !focusedBranchNodeIds.has(c.targetId));
+        (focusedBranchNodeIds.has(conn.sourceId) || focusedBranchNodeIds.has(conn.targetId));
 
       const isDimmed =
-        isFocusDimmed ||
-        (selectedNodeId !== null && !isConnectedToLineage && !isConnectedToSelected) ||
-        (highlightedNodeIds.size > 0 &&
-          !highlightedNodeIds.has(c.sourceId) &&
-          !highlightedNodeIds.has(c.targetId));
+        (focusedBranchNodeIds && focusedBranchNodeIds.size > 0 && !isFocused) ||
+        (selectedNodeId !== null && !isLineage && !isSelected);
 
-      const strokeWidth = getConnectorStrokeWidth(depth, !!isConnectedToSelected, isConnectedToLineage);
-      const strokeOpacity = isFocusDimmed
-        ? 0.25
-        : getConnectorOpacity(!!isConnectedToSelected, isConnectedToLineage, !!isDimmed);
+      const alpha = getConnectorOpacity(isSelected, isLineage, isDimmed);
+      const strokeWidth = getConnectorStrokeWidth(toNode.depth, isSelected, isLineage);
+      const strokeColor = conn.color ? new Color(conn.color).toNumber() : themeColors.cardBorderHover;
 
-      const colorVal = new Color(c.color || '#2563eb').toNumber();
+      const dx = conn.targetX - conn.sourceX;
+      const dy = conn.targetY - conn.sourceY;
 
-      // Parse svg path 'M x1 y1 C cx1 cy1, cx2 cy2, x2 y2'
-      const p = c.path;
-      if (p.startsWith('M')) {
-        const parts = p.replace(/[MC,]/g, ' ').trim().split(/\s+/).map(Number);
-        if (parts.length >= 8) {
-          const [x1, y1, cx1, cy1, cx2, cy2, x2, y2] = parts;
-          g.moveTo(x1, y1);
-          g.bezierCurveTo(cx1, cy1, cx2, cy2, x2, y2);
-          g.stroke({ width: strokeWidth, color: colorVal, alpha: strokeOpacity, cap: 'round' });
-        } else if (parts.length >= 4) {
-          const [x1, y1, x2, y2] = parts;
-          g.moveTo(x1, y1);
-          g.lineTo(x2, y2);
-          g.stroke({ width: strokeWidth, color: colorVal, alpha: strokeOpacity, cap: 'round' });
-        }
+      // Adaptive cubic Bezier based on orientation (horizontal vs vertical flow)
+      let cp1X = conn.sourceX + dx * 0.5;
+      let cp1Y = conn.sourceY;
+      let cp2X = conn.sourceX + dx * 0.5;
+      let cp2Y = conn.targetY;
+
+      if (Math.abs(dy) > Math.abs(dx)) {
+        cp1X = conn.sourceX;
+        cp1Y = conn.sourceY + dy * 0.5;
+        cp2X = conn.targetX;
+        cp2Y = conn.sourceY + dy * 0.5;
       }
-    });
-  }, [connectors, nodePosMap, selectedNodeId, lineageNodeIds, focusedBranchNodeIds, highlightedNodeIds, isPixiReady]);
 
-  // Render Cross-links Layer
+      g.moveTo(conn.sourceX, conn.sourceY);
+      g.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, conn.targetX, conn.targetY);
+
+      g.stroke({
+        width: strokeWidth,
+        color: strokeColor,
+        alpha,
+        cap: 'round',
+        join: 'round',
+      });
+    });
+  }, [connectors, nodePosMap, focusedBranchNodeIds, themeColors.cardBorderHover, isPixiReady]);
+
+  // Render Cross-Links (Dashed Orange Curves with Directional Arrowheads)
   useEffect(() => {
     if (!isPixiReady) return;
     const g = crossLinksLayerRef.current;
@@ -366,20 +449,22 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const target = nodePosMap.get(link.targetId);
       if (!source || !target) return;
 
+      const isFocused =
+        focusedBranchNodeIds &&
+        (focusedBranchNodeIds.has(link.sourceId) || focusedBranchNodeIds.has(link.targetId));
+
+      const alpha = focusedBranchNodeIds && focusedBranchNodeIds.size > 0 ? (isFocused ? 0.9 : 0.08) : 0.65;
+
       const dx = target.x - source.x;
       const dy = target.y - source.y;
-      const cx = (source.x + target.x) / 2 - dy * 0.2;
-      const cy = (source.y + target.y) / 2 + dx * 0.2;
+      const dist = Math.hypot(dx, dy);
+      const curvature = Math.min(dist * 0.25, 120);
 
-      const isFocusDimmed =
-        focusedBranchNodeIds &&
-        focusedBranchNodeIds.size > 0 &&
-        (!focusedBranchNodeIds.has(link.sourceId) || !focusedBranchNodeIds.has(link.targetId));
-
-      const alpha = isFocusDimmed ? 0.2 : 0.65;
+      const midX = (source.x + target.x) / 2;
+      const midY = (source.y + target.y) / 2 - curvature;
 
       g.moveTo(source.x, source.y);
-      g.quadraticCurveTo(cx, cy, target.x, target.y);
+      g.quadraticCurveTo(midX, midY, target.x, target.y);
       g.stroke({
         width: 1.5,
         color: themeColors.crossLinkLine,
@@ -387,9 +472,9 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         cap: 'round',
       });
 
-      // Arrowhead marker
-      const angle = Math.atan2(target.y - cy, target.x - cx);
-      const arrowLen = 8;
+      // Directional arrow head
+      const angle = Math.atan2(target.y - midY, target.x - midX);
+      const arrowLen = 9;
       g.moveTo(target.x, target.y);
       g.lineTo(
         target.x - arrowLen * Math.cos(angle - Math.PI / 6),
@@ -404,7 +489,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     });
   }, [crossLinks, nodePosMap, focusedBranchNodeIds, themeColors.crossLinkLine, isPixiReady]);
 
-  // Render Nodes Layer
+  // Render Nodes Layer (Ultra-Crisp Vector-Quality Text with 3.5x Retina Resolution)
   useEffect(() => {
     if (!isPixiReady) return;
     const nodesContainer = nodesLayerRef.current;
@@ -412,6 +497,9 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
 
     // Clean existing children
     nodesContainer.removeChildren();
+
+    // High resolution multiplier so zooming in to 3.5x maintains vector-crisp clarity
+    const TEXT_RESOLUTION = 3.5;
 
     // Map each positioned node to a PixiJS Container
     nodes.forEach((pNode) => {
@@ -488,11 +576,13 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
             fill: '#d97706',
             align: 'center',
           }),
+          resolution: TEXT_RESOLUTION,
+          roundPixels: true,
         });
         veilText.anchor.set(0.5);
         nodeContainer.addChild(veilText);
       } else {
-        // Normal Node Typography
+        // Normal Node Typography (Crisp 3.5x Resolution for Zero Zoom Blur)
         const fontSize = pNode.depth === 0 ? 15 : pNode.depth === 1 ? 13 : 12;
         const fontWeight = pNode.depth === 0 ? '700' : pNode.depth === 1 ? '600' : '500';
 
@@ -508,6 +598,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
             align: 'center',
             lineHeight: fontSize * 1.3,
           }),
+          resolution: TEXT_RESOLUTION,
+          roundPixels: true,
         });
         labelText.anchor.set(0.5);
 
@@ -526,6 +618,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
               wordWrapWidth: pNode.width - 24,
               align: 'center',
             }),
+            resolution: TEXT_RESOLUTION,
+            roundPixels: true,
           });
           subText.anchor.set(0.5);
           subText.y = halfH - 12;
@@ -560,6 +654,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
             fontWeight: '700',
             fill: themeColors.textSecondary,
           }),
+          resolution: TEXT_RESOLUTION,
+          roundPixels: true,
         });
         glyphText.anchor.set(0.5, 0.55);
         toggleBtn.addChild(glyphText);
@@ -589,7 +685,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       nodesContainer.addChild(nodeContainer);
     });
 
-    // Run culling pass once nodes are mounted
     updateCulling();
   }, [
     nodes,
@@ -600,33 +695,44 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     isActiveRecall,
     revealedNodeIds,
     themeColors,
-    isPixiReady,
     onSelectNode,
     onToggleCollapse,
     onToggleReveal,
+    isPixiReady,
     updateCulling,
   ]);
 
-  // Center on dataset changes or when Pixi becomes ready
-  useEffect(() => {
-    if (!isPixiReady || nodes.length === 0) return;
-    fitToScreen(false);
-  }, [isPixiReady, rootId, fitToScreen]);
-
-  // Mathematical spatial hit-testing engine for 100% reliable node selection & collapse
-  const pointerDownRef = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
-
+  // Spatial Hit-Testing Engine with Multi-Touch Guard
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    pointerDownRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    activeTouchIdsRef.current.add(e.pointerId);
+    if (activeTouchIdsRef.current.size > 1) {
+      hadMultiTouchRef.current = true;
+    }
+    if (!e.isPrimary) return;
+    pointerDownRef.current = { x: e.clientX, y: e.clientY, time: Date.now(), pointerId: e.pointerId };
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const wasMultiTouch = hadMultiTouchRef.current || activeTouchIdsRef.current.size > 1;
+    activeTouchIdsRef.current.delete(e.pointerId);
+    if (activeTouchIdsRef.current.size === 0) {
+      hadMultiTouchRef.current = false;
+    }
+
+    // Guard: Never select or deselect if user was pinching or multi-touch dragging on mobile
+    if (!e.isPrimary || wasMultiTouch) {
+      pointerDownRef.current = null;
+      return;
+    }
+
     const start = pointerDownRef.current;
+    if (!start || start.pointerId !== e.pointerId) return;
+
     const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     const duration = Date.now() - start.time;
 
-    // Distinguish tap from pan/drag (threshold 8px and 500ms)
-    if (dist < 8 && duration < 500) {
+    // Distinguish tap from pan/drag (threshold 10px and 500ms)
+    if (dist < 10 && duration < 500) {
       const viewport = viewportRef.current;
       const container = containerRef.current;
       if (!viewport || !container) return;
@@ -642,11 +748,11 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         const halfW = pNode.width / 2;
         const halfH = pNode.height / 2;
 
-        // Check collapse handle (+/- handle circle at edge)
+        // Check collapse handle (+/- handle circle at edge) with generous mobile hitbox
         if (pNode.node.children && pNode.node.children.length > 0) {
           const handleX = pNode.x + halfW;
           const handleY = pNode.y;
-          if (Math.hypot(worldPoint.x - handleX, worldPoint.y - handleY) <= 15) {
+          if (Math.hypot(worldPoint.x - handleX, worldPoint.y - handleY) <= 18) {
             onToggleCollapse(pNode.id, e as any);
             return;
           }
@@ -677,6 +783,14 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     }
   };
 
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    activeTouchIdsRef.current.delete(e.pointerId);
+    if (activeTouchIdsRef.current.size === 0) {
+      hadMultiTouchRef.current = false;
+    }
+    pointerDownRef.current = null;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -684,6 +798,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       aria-label="Mind Map WebGL Stage"
       onPointerDownCapture={handlePointerDown}
       onPointerUpCapture={handlePointerUp}
+      onPointerCancelCapture={handlePointerCancel}
       className="w-full h-full relative overflow-hidden select-none outline-none touch-none cursor-grab active:cursor-grabbing"
     />
   );

@@ -84,14 +84,9 @@ body {
     radial-gradient(circle, rgba(255, 255, 255, 0.05) 1.2px, transparent 1.2px);
 }
 
-/* Google Stitch Canvas Dots Architecture */
-.canvas-dots {
-  background-size: 24px 24px;
-  background-image: radial-gradient(circle, #cbd5e1 1.2px, transparent 1.2px);
-}
-.dark .canvas-dots {
-  background-size: 24px 24px;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
+/* Smooth canvas stage styling */
+.canvas-stage {
+  background-color: var(--background);
 }
 
 /* Pulse animation for active search focus */
