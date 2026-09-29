@@ -22,26 +22,27 @@ This project is the **Cloud & Visualization Engine** of the Obsidian MindMap eco
 
 ## ✨ Features
 
-- **⚡ Hardware-Accelerated 60 FPS WebGL Engine**: Powered by **PixiJS v8** and `pixi-viewport`. Replaced heavy HTML DOM nodes (`<div>`) with hardware GPU sprites, textured containers, and smooth cubic Bezier splines.
-- **🎯 Viewport Culling & LOD**: Automatically culls off-screen nodes and connectors, maintaining sub-1% CPU usage during pan/zoom even with 1,000+ nodes.
-- **🎨 Scandinavian Minimalist Aesthetic (Google Stitch)**: Designed per Linear/Notion principles—Pure Porcelain (`#FFFFFF`), Nordic Alabaster (`#F8FAFC`), Ceramic Cobalt (`#2563EB`), hairline borders, and architectural dot matrix texture (`.canvas-dots`).
-- **🔍 Instant Search & Highlighting (`⌘K`)**: Fast client-side fuzzy search across node labels, summaries, and tags with live match counters (`x/total`) and canvas dimming.
+- **⚡ Hardware-Accelerated 60 FPS WebGL Engine**: Powered by **PixiJS v8** and `pixi-viewport`. Replaced heavy HTML DOM nodes (`<div>`) with hardware GPU containers, multi-layer drop shadows, and smooth cubic Bezier splines.
+- **🔎 3.5× Retina Super-Sampled Typography**: Renders Hindi (Devanagari) and English text at `3.5×` supersampled texture resolution (`roundPixels: true`, `2.5×` renderer DPR) so deep zoom stays 100% razor-sharp with zero pixelation.
+- **🎨 Clean Zero-Dot Studio Surface (Google Stitch)**: Smooth radial studio canvas (`.canvas-stage`: `#F8FAFC → #EEF2F6` in Light mode, `#111827 → #080C14` in Dark mode) with zero dot-grid visual noise. Elevated `#FFFFFF` cards pop via 2-layer tactile shadows and `4px` branch-colored left accent bars.
+- **📱 Mobile-First Progressive 2-Column UX (`< 768px`)**:
+  - Automatically defaults to a readable 2-column **Tree (`horizontal`)** overview with Level-1 branches initially collapsed (`+2` / `+3` colored pill badges) at `~0.75×` zoom instead of shrinking the whole graph into microscopic nodes.
+  - **Smart Camera Auto-Focus (`frameNodeSubset`)**: Tapping any `+N` badge expands that branch and smoothly animates the camera to frame `[Branch + Newly Expanded Sub-Nodes]`.
+  - **Floating Mobile Thumb Control Dock**: One-thumb access to Zoom In (`+`), Zoom Out (`–`), Fit to Screen, Expand/Collapse All, quick layout switching (`Tree | Balanced | Vertical`), and a swipe-friendly **Mobile Bottom Sheet Inspector**.
+- **🎯 Viewport Culling & Multi-Touch Guards**: Automatically culls off-screen nodes and prevents accidental node selection during two-finger pinch-to-zoom gestures.
+- **🔍 Instant Search & Auto-Expansion (`⌘K`)**: Fast client-side search across node labels, subtitles, descriptions, and key facts—automatically expanding collapsed parent branches when a hidden child matches.
 - **📐 Multiple Layout Algorithms**:
-  - **Balanced (Two-way Radial Tree)**: Root centered, branches distributed left and right.
-  - **Tree (Left-to-Right)**: Hierarchical outline flow.
+  - **Balanced (Two-way Tree)**: Root centered, branches distributed left and right.
+  - **Tree (Left-to-Right)**: Clean hierarchical outline flow.
   - **Vertical (Top-to-Bottom)**: Downward organizational structure.
-  - **Radial**: Concentric circular orientation.
-- **🧠 Active Recall Study Mode**: Transforms the entire mind map into an interactive flashcard memory trainer. Conceals node titles behind tap-to-reveal pills for active study and UPSC/competitive exam mastery.
-- **📋 Right-Docked Porcelain Inspector**:
-  - Detailed concept notes and syllabus summaries.
-  - High-Yield key facts checkpoints with status badges.
-  - 2×2 Node Attributes Grid (Classification, Sub-concepts, Recall Status, Branch Focus).
-  - SVG Retention Progress Ring with SRS mastery levels.
+- **🧠 Active Recall Study Mode**: Transforms the mind map into an interactive flashcard memory trainer by masking node titles behind tap-to-reveal pills.
+- **📋 Porcelain Inspector &Mobile Bottom Sheet**:
+  - Detailed concept notes, syllabus summaries, and High-Yield key facts checkpoints.
+  - 2×2 Node Attributes Grid & SVG Retention Progress Ring.
 - **🔗 Bi-directional Obsidian Bridge**:
   - Prominent **Obsidian में खोलें (Open in Obsidian)** action button with `<kbd>⌘↵</kbd>` shortcut.
   - Communicates with the local Obsidian host via secure `window.parent.postMessage`.
-  - Deep-links directly to local `.md` vault notes.
-- **📊 Real-time Telemetry HUD**: Persistent bottom telemetry display reporting active node count, visible culled count, WebGL 60 FPS status, and clickable lineage breadcrumbs.
+- **📊 Real-time Telemetry HUD**: Persistent bottom HUD reporting total/visible nodes, 60 FPS WebGL status, and clickable lineage breadcrumbs.
 
 ---
 
@@ -79,12 +80,12 @@ Designed and synced using **Google Stitch**, adhering to modern architectural mi
 
 | Token | Light Theme | Dark Theme | Purpose |
 |---|---|---|---|
-| **Canvas Background** | `#F8FAFC` (Nordic Alabaster) | `#0B1120` (Midnight Navy) | Global workspace canvas |
-| **Grid Dots** | `rgba(148, 163, 184, 0.45)` | `rgba(51, 65, 85, 0.45)` | 24px architectural grid |
-| **Node Surface** | `#FFFFFF` (Pure Porcelain) | `#1E293B` (Slate Tectonic) | Node cards & inspector |
-| **Primary Accent** | `#2563EB` (Ceramic Cobalt) | `#3B82F6` (Electric Azure) | Selection ring & brand |
+| **Canvas Stage (`.canvas-stage`)** | `#F8FAFC → #EEF2F6` (Smooth Radial) | `#111827 → #080C14` (Midnight Radial) | Zero-dot, zero-noise studio surface |
+| **Node Surface** | `#FFFFFF` (Pure Porcelain) | `#1E293B` (Slate Tectonic) | Elevated node cards & inspector |
+| **Card Elevation** | `2-Layer Soft Shadow + 4px Branch Bar` | `2-Layer Dark Shadow + 4px Branch Bar` | Tactile card separation & visual hierarchy |
+| **Primary Accent** | `#2563EB` (Ceramic Cobalt) | `#3B82F6` (Electric Azure) | Selection ring, badges & brand |
 | **Active Recall** | `#D97706` (Warm Amber) | `#F59E0B` (Amber Flame) | Study recall mode & badges |
-| **Typography** | Geist Sans / Noto Sans Devanagari | Same | Crisp legibility in Hindi & English |
+| **Typography** | Geist Sans / Noto Sans Devanagari (`3.5×` Retina) | Same | Razor-sharp legibility in Hindi & English |
 
 ---
 
@@ -109,12 +110,15 @@ Designed and synced using **Google Stitch**, adhering to modern architectural mi
    ```
    Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-3. **Build Static Export (Cloudflare Pages):**
+3. **Build Static Export & Deploy to Cloudflare:**
    ```bash
    npm run build
+   npx wrangler deploy
+   ```
+   To preview the static export locally before deploying:
+   ```bash
    npx serve out -l 3005
    ```
-   Open [http://localhost:3005](http://localhost:3005) to verify the production static bundle.
 
 ---
 

@@ -64,9 +64,15 @@ The Cloudflare Next.js application has successfully transitioned from an HTML re
 - **Action:** Dispatches `window.parent.postMessage({ action: 'OPEN_NOTE', nodeId: node.id }, '*')`.
 
 ### 6. Google Stitch Modern Minimal UI — [DONE ✅]
-- **Theme:** Scandinavian architectural light theme (`#FFFFFF`, `#F8FAFC`, `#2563EB`, `.canvas-dots`).
-- **Studio Header:** Integrated search (`⌘K`), layout switcher (Balanced, Tree, Vertical, Radial), viewport action dock, Active Recall mode, and Quiz modal.
-- **Inspector Panel:** Edge-to-edge right porcelain sheet with 2×2 attributes grid, concept summaries, high-yield checkpoints, and SVG SRS retention ring.
+- **Theme:** Clean zero-dot studio surface (`.canvas-stage` smooth radial gradient `#F8FAFC → #EEF2F6`), Pure Porcelain (`#FFFFFF`) elevated cards with 2-layer drop shadows and `4px` branch-colored left accent bars.
+- **Studio Header:** Integrated search (`⌘K`), dataset switcher, layout switcher (Balanced, Tree, Vertical), viewport action dock, Active Recall mode, and Quiz modal.
+- **Inspector Panel:** Right-docked porcelain sheet on desktop and swipe-friendly Bottom Sheet (`max-h-[75vh] rounded-t-2xl`) on mobile with 2×2 attributes grid, concept summaries, high-yield checkpoints, and SVG SRS retention ring.
+
+### 7. 3.5× Retina Text & Mobile-First Progressive UX — [DONE ✅]
+- **Zero Blur on Zoom:** Super-sampled PixiJS `Text` at `TEXT_RESOLUTION = 3.5` with `roundPixels: true` and `2.5×` renderer DPR.
+- **Mobile 2-Column Progressive Default (`< 768px`):** Automatically opens in `Tree (horizontal)` mode with Level-1 branches collapsed (`+2`/`+3` colored pill badges) so cards render at `~0.75×` readable scale on phone screens.
+- **Smart Camera Auto-Focus (`frameNodeSubset`):** Tapping `+N` on any branch expands its children and smoothly animates the camera to frame `[Branch + Expanded Children]`.
+- **Floating Mobile Thumb Dock:** Added right-side thumb controls (`+`, `–`, `Fit`, `Expand/Collapse All`) and top quick layout pill bar (`Tree | Balanced | Vertical`).
 
 ---
 

@@ -64,18 +64,19 @@ When rendering tree branches on the canvas, use low-saturation, ceramic tones th
 - **Action Buttons:** Tactile square or rounded-full ghost icons (`32px x 32px`). Hover: `bg-slate-100`, Active: `scale-95 translate-y-[0.5px]`.
 - **Dataset / Layout Pills:** Clean dropdown pills showing current state (e.g. `Tree`, `Radial`, `Geo-50`) with down-caret.
 
-### 4.2 WebGL & DOM Node Cards (`MindMapNodeCard.tsx` / `MindMapWebGLCanvas.tsx`)
-- **Card Geometry:** Rectangular with subtle rounded corners (`border-radius: 8px` to `10px`).
-- **Fill:** Crisp Porcelain White (`#FFFFFF`).
-- **Stroke:** 1px hairline border (`#E2E8F0`). Selected/focused node: 2px Ceramic Cobalt (`#2563EB`) stroke with a 3px soft outer halo (`rgba(37, 99, 235, 0.15)`).
-- **Badge Indicators:** Small pill chips on top-right showing child count or tag count in muted monospace (`text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full`).
-- **Active Recall Mode:** When active, node text is masked with a soft amber dashed pill: `"Tap to reveal"`.
+### 4.2 WebGL Node Cards (`MindMapWebGLCanvas.tsx`)
+- **Canvas Surface (`.canvas-stage`):** Zero-dot, smooth studio radial gradient (`radial-gradient(circle at 50% 45%, #f8fafc 0%, #eef2f6 100%)` in Light mode; `#111827 → #080c14` in Dark mode). Dot grids are strictly banned.
+- **Card Geometry & Elevation:** Rectangular with rounded corners (`14px` Root, `11px` Level 1, `9px` Leaf), 2-layer soft drop shadow (`alpha: 0.05` & `0.04`), and `4px` branch-colored left accent bar on all Level 1+ cards.
+- **Fill & Stroke:** Crisp Porcelain White (`#FFFFFF`) with `1.25px` slate border (`#CBD5E1`). Selected/Root node features Ceramic Cobalt (`#2563EB`) border and soft outer halo.
+- **Retina Text Rendering:** `TEXT_RESOLUTION = 3.5` with `roundPixels: true` and `2.5×` renderer DPR for zero blur on deep zoom.
+- **Collapse/Expand Pill Badges:** Collapsed branches display a prominent branch-colored pill badge (`+2`, `+3`) with white monospace count; expanded branches display a clean `–` circle button.
+- **Active Recall Mode:** When active, node text is masked with a soft amber veil: `"देखने के लिए टैप करें (Reveal)"`.
 
-### 4.3 Node Detail Slide-over Panel (`MindMapNodeDetailPanel.tsx`)
-- **Position:** Right-docked slide-over on desktop (`w-96`, margin `16px`, height `calc(100vh - 32px)`), floating sheet with `rounded-2xl`.
-- **Header:** Node title in `text-lg font-semibold tracking-tight text-slate-900`, breadcrumb lineage in subtle monospace chevron trail.
-- **Body:** Markdown preview with clean light typography, code blocks in `#F1F5F9` with `#334155` text.
-- **Action Bar:** Primary button: "Open in Obsidian" (Ceramic Cobalt fill `#2563EB`, white text, tactile spring click). Secondary button: "Practice Quiz" (Sage Emerald badge).
+### 4.3 Node Detail Slide-over Panel & Mobile Bottom Sheet (`MindMapNodeDetailPanel.tsx`)
+- **Desktop Position (`>= 640px`):** Right-docked slide-over (`w-88 sm:w-96`, full height) with porcelain tectonic cards.
+- **Mobile Position (`< 640px`):** Native bottom sheet (`inset-x-0 bottom-0 max-h-[75vh] rounded-t-2xl`) with drag handle pill and backdrop scrim.
+- **Header & Body:** Breadcrumb lineage trail, concept summary, High-Yield checkpoints, 2×2 attributes grid, and SVG retention ring.
+- **Action Bar:** Primary button: "Obsidian में खोलें" (`#2563EB` Ceramic Cobalt) + "क्विज़ अभ्यास (Practice Quiz)".
 
 ### 4.4 Quiz Modal (`MindMapQuizModal.tsx`)
 - **Backdrop:** Light scrim (`rgba(15, 23, 42, 0.25)` with `backdrop-blur-sm`).
@@ -85,11 +86,13 @@ When rendering tree branches on the canvas, use low-saturation, ceramic tones th
 ---
 
 ## 5. Layout & Spatial Principles
-- **No Overlapping Clutter:** Every HUD element occupies a distinct floating z-index zone (`z-10` canvas, `z-30` controls, `z-40` panels, `z-50` modals).
+- **No Overlapping Clutter:** Every HUD element occupies a distinct floating z-index zone (`z-10` canvas, `z-20` mobile thumb dock & HUD, `z-30` top toolbar, `z-40` inspector sheet, `z-50` modals).
 - **Generous Whitespace:** Minimum 12px margin between HUD containers and viewport edges.
-- **Responsive Collapse:**
-  - `< 640px` (Mobile / narrow Obsidian sidebar): Toolbar collapses into a compact bottom navigation bar; Detail panel slides up from bottom as an interactive swipe sheet.
-  - `> 640px` (Desktop): Floating top/bottom dock, right-side docked detail sheet.
+- **Mobile-First Progressive Architecture (`< 768px`):**
+  - **2-Column Readable Default:** Automatically opens in `Tree (horizontal)` mode with Level-1 branches collapsed (`+2`/`+3` badges) and compact `52px` horizontal gaps so cards render at `~0.75×` zoom instead of tiny `0.21×` specks.
+  - **Smart Camera Auto-Focus (`frameNodeSubset`):** Tapping `+N` to expand a branch smoothly animates the viewport camera to frame `[Expanded Branch + Direct Children]` at readable zoom.
+  - **Floating Mobile Thumb Dock:** Right-aligned vertical dock (`+`, `–`, `Fit`, `Expand/Collapse All`) + top quick layout pill bar (`Tree | Balanced | Vertical`).
+  - **Desktop (`>= 768px`):** Full expanded `Balanced` two-way tree, top studio navbar, and right-docked detail drawer.
 
 ---
 
