@@ -46,8 +46,6 @@ interface MindMapToolbarProps {
   onToggleCollapseAll: () => void;
   matchCount: number;
   totalNodes: number;
-  gridStyle?: 'dots' | 'clean';
-  onToggleGridStyle?: () => void;
 }
 
 export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
@@ -68,8 +66,6 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
   onToggleCollapseAll,
   matchCount,
   totalNodes,
-  gridStyle = 'dots',
-  onToggleGridStyle,
 }) => {
   const containerToolbarRef = React.useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -411,21 +407,6 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
               <ChevronUp className="w-3.5 h-3.5" />
             )}
           </button>
-          {onToggleGridStyle && (
-            <button
-              onClick={onToggleGridStyle}
-              className={cn(
-                'p-1 rounded transition-all duration-150 active:scale-95',
-                gridStyle === 'dots'
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/50'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700'
-              )}
-              title={gridStyle === 'dots' ? 'बैकग्राउंड ग्रिड छुपाएं (Clean Slate)' : 'बैकग्राउंड डॉट ग्रिड दिखाएं (Dot Grid)'}
-              aria-label="Toggle Background Grid"
-            >
-              <Grid className="w-3.5 h-3.5" />
-            </button>
-          )}
           <button
             onClick={toggleFullscreen}
             className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all duration-150 active:scale-95"
@@ -537,18 +518,6 @@ export const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
                 {hasCollapsedNodes ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                 <span>{hasCollapsedNodes ? 'सभी शाखाएं खोलें' : 'सभी शाखाएं समेटें'}</span>
               </button>
-              {onToggleGridStyle && (
-                <button
-                  onClick={() => {
-                    onToggleGridStyle();
-                    setShowOverflowMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
-                >
-                  <Grid className="w-3.5 h-3.5" />
-                  <span>ग्रिड: {gridStyle === 'dots' ? 'डॉट ग्रिड (चालू)' : 'प्लेन साफ़ (चालू)'}</span>
-                </button>
-              )}
               <button
                 onClick={() => {
                   onToggleTheme();

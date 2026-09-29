@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    --background: #f8fafc;
+    --background: #f1f5f9;
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #0f172a;
@@ -71,22 +71,13 @@ body {
   background: rgba(156, 163, 175, 0.6);
 }
 
-/* Subtle, calm grid background pattern for educational mindmap canvas */
-.bg-grid-pattern-light {
-  background-size: 32px 32px;
-  background-image: 
-    radial-gradient(circle, rgba(148, 163, 184, 0.12) 1.2px, transparent 1.2px);
-}
-
-.bg-grid-pattern-dark {
-  background-size: 32px 32px;
-  background-image: 
-    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1.2px, transparent 1.2px);
-}
-
-/* Smooth canvas stage styling */
+/* Pure, zero-noise studio surface for canvas (Zero Dots) */
 .canvas-stage {
-  background-color: var(--background);
+  background: radial-gradient(circle at 50% 45%, #f8fafc 0%, #eef2f6 100%);
+}
+
+.dark .canvas-stage {
+  background: radial-gradient(circle at 50% 45%, #111827 0%, #080c14 100%);
 }
 
 /* Pulse animation for active search focus */

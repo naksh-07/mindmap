@@ -80,7 +80,8 @@ export function computeMindMapLayout(
   root: MindMapNode,
   mode: LayoutMode = 'balanced',
   collapsedSet: Set<string> = new Set(),
-  forceFallback: boolean = false
+  forceFallback: boolean = false,
+  compact: boolean = false
 ): { nodes: PositionedNode[]; connectors: ConnectorLine[] } {
   const nodes: PositionedNode[] = [];
   const connectors: ConnectorLine[] = [];
@@ -104,8 +105,8 @@ export function computeMindMapLayout(
     return { nodes, connectors };
   }
 
-  const levelGapX = 140; // Horizontal gap between node card edges
-  const levelGapY = 24;  // Minimum vertical gap between sibling subtrees
+  const levelGapX = compact ? 52 : 120; // Horizontal gap between node card edges
+  const levelGapY = compact ? 18 : 24;  // Minimum vertical gap between sibling subtrees
 
   if (mode === 'balanced') {
     // DETERMINISTIC LEVEL-1 BRANCH SIDE ASSIGNMENT BASED ON SOURCE ORDER (BUG-001 Fix)

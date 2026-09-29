@@ -18,10 +18,32 @@ export interface MindMapWebGLCanvasProps {
   isActiveRecall: boolean;
   revealedNodeIds: Set<string>;
   theme: 'light' | 'dark';
-  gridStyle?: 'dots' | 'clean';
   onSelectNode: (nodeId: string | null) => void;
   onToggleCollapse: (nodeId: string, e: React.MouseEvent) => void;
   onToggleReveal: (nodeId: string, e: React.MouseEvent) => void;
+}
+
+/**
+ * Computes the exact relative (x, y) offset for the expand/collapse badge
+ * based on which direction the node's children grow.
+ */
+function getToggleBadgeOffset(pNode: PositionedNode): { x: number; y: number } {
+  const halfW = pNode.width / 2;
+  const halfH = pNode.height / 2;
+
+  if (pNode.parent) {
+    const dx = pNode.x - pNode.parent.x;
+    const dy = pNode.y - pNode.parent.y;
+    // Vertical layout flow (children grow downward)
+    if (Math.abs(dy) > Math.abs(dx) * 1.5 && dy > 0 && Math.abs(dx) < 40) {
+      return { x: 0, y: halfH };
+    }
+    // Left-branching flow in Balanced mode
+    if (dx < -20) {
+      return { x: -halfW, y: 0 };
+    }
+  }
+  return { x: halfW, y: 0 };
 }
 
 export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
@@ -35,7 +57,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
   isActiveRecall,
   revealedNodeIds,
   theme,
-  gridStyle = 'dots',
   onSelectNode,
   onToggleCollapse,
   onToggleReveal,
@@ -45,13 +66,13 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
   const viewportRef = useRef<Viewport | null>(null);
 
   // Scene sub-containers (rendered bottom-to-top)
-  const gridLayerRef = useRef<Graphics | null>(null);
   const connectorsLayerRef = useRef<Graphics | null>(null);
   const crossLinksLayerRef = useRef<Graphics | null>(null);
   const nodesLayerRef = useRef<Container | null>(null);
 
-  // Track initial fit per dataset root
+  // Track initial fit per dataset root & smart camera focus after expand/collapse
   const hasFittedRef = useRef<boolean>(false);
+  const pendingFocusNodeIdRef = useRef<string | null>(null);
   const rootId = nodes.length > 0 ? nodes[0].id : null;
   const [isPixiReady, setIsPixiReady] = useState(false);
 
@@ -67,62 +88,22 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     return map;
   }, [nodes]);
 
-  // Color theme tokens (conforming strictly to DESIGN.md Modern Minimal Light)
+  // Color theme tokens (Pure Zero-Dot Architectural Studio Surface)
   const isDark = theme === 'dark';
   const themeColors = useMemo(() => {
     return {
-      canvasBg: isDark ? 0x0f172a : 0xf8fafc,
       cardBg: isDark ? 0x1e293b : 0xffffff,
-      cardBorder: isDark ? 0x334155 : 0xe2e8f0,
+      cardBorder: isDark ? 0x334155 : 0xcbd5e1,
       cardBorderHover: isDark ? 0x64748b : 0x94a3b8,
       selectedBorder: 0x2563eb,
       selectedHalo: 0x2563eb,
       highlightBorder: 0xf59e0b,
       textPrimary: isDark ? '#f8fafc' : '#0f172a',
-      textSecondary: isDark ? '#94a3b8' : '#64748b',
+      textSecondary: isDark ? '#94a3b8' : '#475569',
       activeRecallVeil: 0xd97706,
-      badgeBg: isDark ? 0x334155 : 0xf1f5f9,
-      badgeBorder: isDark ? 0x475569 : 0xe2e8f0,
-      badgeText: isDark ? '#94a3b8' : '#475569',
       crossLinkLine: 0xf59e0b,
-      gridDot: isDark ? 0x475569 : 0x94a3b8,
     };
   }, [isDark]);
-
-  // Dynamic WebGL Background Grid (Pans & Zooms in 1:1 hardware sync with camera)
-  const updateGrid = useCallback(() => {
-    const viewport = viewportRef.current;
-    const gridG = gridLayerRef.current;
-    if (!viewport || !gridG) return;
-
-    gridG.clear();
-    if (gridStyle === 'clean') return;
-
-    const scale = viewport.scale.x;
-    // Fade out dots smoothly when zoomed way out to prevent visual noise
-    if (scale < 0.22) return;
-
-    const bounds = viewport.getVisibleBounds();
-    const step = 64; // World coordinates grid step
-    const startX = Math.floor((bounds.x - step) / step) * step;
-    const endX = Math.ceil((bounds.x + bounds.width + step) / step) * step;
-    const startY = Math.floor((bounds.y - step) / step) * step;
-    const endY = Math.ceil((bounds.y + bounds.height + step) / step) * step;
-
-    // Smooth alpha fade: 0 at scale 0.22 to 0.40 at scale 0.55+
-    const alpha = Math.min(Math.max((scale - 0.22) / 0.35, 0), 1) * (isDark ? 0.35 : 0.45);
-    if (alpha <= 0.02) return;
-
-    // Maintain crisp physical point size across zoom scales (never too large, never too tiny)
-    const dotRadius = Math.max(1.1 / scale, 1.2);
-
-    for (let x = startX; x <= endX; x += step) {
-      for (let y = startY; y <= endY; y += step) {
-        gridG.circle(x, y, dotRadius);
-      }
-    }
-    gridG.fill({ color: themeColors.gridDot, alpha });
-  }, [gridStyle, isDark, themeColors.gridDot]);
 
   // Viewport Culling Engine (60 FPS optimizer)
   const updateCulling = useCallback(() => {
@@ -131,7 +112,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     if (!viewport || !nodesLayer) return;
 
     const visibleBounds = viewport.getVisibleBounds();
-    const margin = 100;
+    const margin = 120;
     const minX = visibleBounds.x - margin;
     const maxX = visibleBounds.x + visibleBounds.width + margin;
     const minY = visibleBounds.y - margin;
@@ -151,63 +132,102 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     });
   }, []);
 
-  // Fit view to all nodes bounding box (Adaptive for Mobile & Desktop)
-  const fitToScreen = useCallback((animate = true) => {
-    const viewport = viewportRef.current;
-    const container = containerRef.current;
-    if (!viewport || !container || nodes.length === 0) return;
+  // Frame a specific subset of nodes cleanly in the viewport
+  const frameNodeSubset = useCallback(
+    (targetNodes: PositionedNode[], animate = true) => {
+      const viewport = viewportRef.current;
+      const container = containerRef.current;
+      if (!viewport || !container || targetNodes.length === 0) return;
 
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
 
-    nodes.forEach((n) => {
-      const w = n.width || 0;
-      const h = n.height || 0;
-      minX = Math.min(minX, n.x - w / 2);
-      maxX = Math.max(maxX, n.x + w / 2);
-      minY = Math.min(minY, n.y - h / 2);
-      maxY = Math.max(maxY, n.y + h / 2);
-    });
-
-    if (minX === Infinity) return;
-
-    const isMobile = container.clientWidth < 640;
-    const padding = isMobile ? 36 : 72;
-    const bboxWidth = maxX - minX + padding * 2;
-    const bboxHeight = maxY - minY + padding * 2;
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    const scaleX = container.clientWidth / bboxWidth;
-    const scaleY = container.clientHeight / bboxHeight;
-    const minScale = isMobile ? 0.2 : 0.35;
-    const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), minScale), 1.2);
-
-    if (animate) {
-      viewport.animate({
-        position: { x: centerX, y: centerY },
-        scale: targetScale,
-        time: 400,
-        ease: 'easeInOutSine',
-        callbackOnComplete: () => {
-          updateCulling();
-          updateGrid();
-        },
+      targetNodes.forEach((n) => {
+        const w = n.width || 0;
+        const h = n.height || 0;
+        minX = Math.min(minX, n.x - w / 2);
+        maxX = Math.max(maxX, n.x + w / 2);
+        minY = Math.min(minY, n.y - h / 2);
+        maxY = Math.max(maxY, n.y + h / 2);
       });
-    } else {
-      viewport.moveCenter(centerX, centerY);
-      viewport.scaled = targetScale;
-      updateCulling();
-      updateGrid();
-    }
-  }, [nodes, updateCulling, updateGrid]);
+
+      if (minX === Infinity) return;
+
+      const isMobile = container.clientWidth < 640;
+      const padX = isMobile ? 28 : 80;
+      const padY = isMobile ? 64 : 80;
+      const bboxWidth = maxX - minX + padX * 2;
+      const bboxHeight = maxY - minY + padY * 2;
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      const scaleX = container.clientWidth / bboxWidth;
+      const scaleY = container.clientHeight / bboxHeight;
+      // On mobile, never zoom out into unreadable microscopic ants (< 0.55x)
+      const minScale = isMobile ? 0.58 : 0.38;
+      const maxScale = isMobile ? 1.05 : 1.2;
+      const targetScale = Math.min(Math.max(Math.min(scaleX, scaleY), minScale), maxScale);
+
+      if (animate) {
+        viewport.animate({
+          position: { x: centerX, y: centerY },
+          scale: targetScale,
+          time: 360,
+          ease: 'easeInOutSine',
+          callbackOnComplete: updateCulling,
+        });
+      } else {
+        viewport.moveCenter(centerX, centerY);
+        viewport.scaled = targetScale;
+        updateCulling();
+      }
+    },
+    [updateCulling]
+  );
+
+  // Fit view to all nodes (with smart readable framing on mobile)
+  const fitToScreen = useCallback(
+    (animate = true) => {
+      const container = containerRef.current;
+      if (!container || nodes.length === 0) return;
+
+      const isMobile = container.clientWidth < 640;
+      if (isMobile) {
+        // On mobile, prioritize framing Root + Depth 1 branches so text is always large & readable
+        const coreNodes = nodes.filter((n) => n.depth <= 1);
+        frameNodeSubset(coreNodes.length > 0 ? coreNodes : nodes, animate);
+      } else {
+        frameNodeSubset(nodes, animate);
+      }
+    },
+    [nodes, frameNodeSubset]
+  );
 
   // Reset fitted ref when root node changes
   useEffect(() => {
     hasFittedRef.current = false;
   }, [rootId]);
+
+  // Smart Camera Auto-Focus when a branch is expanded or collapsed
+  useEffect(() => {
+    if (!isPixiReady || !pendingFocusNodeIdRef.current) return;
+    const toggledId = pendingFocusNodeIdRef.current;
+    pendingFocusNodeIdRef.current = null;
+
+    const targetNode = nodePosMap.get(toggledId);
+    if (!targetNode) return;
+
+    if (!targetNode.collapsed && targetNode.children && targetNode.children.length > 0) {
+      // Node was just expanded -> Frame the node and its newly revealed direct children
+      frameNodeSubset([targetNode, ...targetNode.children], true);
+    } else if (targetNode.collapsed && targetNode.parent) {
+      // Node was just collapsed -> Frame its parent and sibling branches
+      const siblings = targetNode.parent.children || [targetNode];
+      frameNodeSubset([targetNode.parent, ...siblings], true);
+    }
+  }, [nodes, isPixiReady, nodePosMap, frameNodeSubset]);
 
   // Listen for toolbar fit-screen event
   useEffect(() => {
@@ -226,26 +246,20 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       if (!viewport) return;
       const factor = customEvent.detail?.direction === 'in' ? 1.25 : 0.8;
       const currentScale = viewport.scale.x;
-      const targetScale = Math.min(Math.max(currentScale * factor, 0.2), 3.5);
+      const targetScale = Math.min(Math.max(currentScale * factor, 0.25), 3.5);
       viewport.animate({
         scale: targetScale,
-        time: 250,
+        time: 220,
         ease: 'easeInOutSine',
-        callbackOnComplete: () => {
-          updateCulling();
-          updateGrid();
-        },
+        callbackOnComplete: updateCulling,
       });
     };
     window.addEventListener('mindmap:zoom', handleZoom);
     return () => window.removeEventListener('mindmap:zoom', handleZoom);
-  }, [updateCulling, updateGrid]);
+  }, [updateCulling]);
 
   const updateCullingRef = useRef(updateCulling);
   updateCullingRef.current = updateCulling;
-
-  const updateGridRef = useRef(updateGrid);
-  updateGridRef.current = updateGrid;
 
   // Initialize PixiJS Application & Viewport (Runs once on mount)
   useEffect(() => {
@@ -261,7 +275,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const width = container.clientWidth || window.innerWidth;
       const height = container.clientHeight || window.innerHeight;
 
-      // Calibrate device pixel ratio with ceiling to prevent GPU memory bloat on 4K/retina
       const dpr = Math.min(Math.max(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5), 2.5);
 
       await app.init({
@@ -294,39 +307,31 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         .drag()
         .pinch()
         .wheel({ smooth: 6 })
-        .decelerate();
+        .decelerate({ friction: 0.92 });
 
       app.stage.addChild(viewport);
       viewportRef.current = viewport;
 
-      // 1. Dynamic WebGL Background Grid (Hardware accelerated)
-      const gridG = new Graphics();
-      viewport.addChild(gridG);
-      gridLayerRef.current = gridG;
-
-      // 2. Connectors Layer
+      // 1. Connectors Layer
       const connectorsG = new Graphics();
       viewport.addChild(connectorsG);
       connectorsLayerRef.current = connectorsG;
 
-      // 3. Cross-links Layer
+      // 2. Cross-links Layer
       const crossLinksG = new Graphics();
       viewport.addChild(crossLinksG);
       crossLinksLayerRef.current = crossLinksG;
 
-      // 4. Nodes Container
+      // 3. Nodes Container
       const nodesContainer = new Container();
       viewport.addChild(nodesContainer);
       nodesLayerRef.current = nodesContainer;
 
-      // Bind culling & dynamic background grid on camera movement
       viewport.on('moved', () => {
         updateCullingRef.current();
-        updateGridRef.current();
       });
       viewport.on('zoomed', () => {
         updateCullingRef.current();
-        updateGridRef.current();
       });
 
       setIsPixiReady(true);
@@ -334,7 +339,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
 
     initPixi();
 
-    // Handle container resize
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -342,7 +346,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
           appRef.current.renderer.resize(width, height);
           viewportRef.current.resize(width, height);
           updateCullingRef.current();
-          updateGridRef.current();
         }
       }
     });
@@ -356,7 +359,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
         viewportRef.current = null;
-        gridLayerRef.current = null;
         connectorsLayerRef.current = null;
         crossLinksLayerRef.current = null;
         nodesLayerRef.current = null;
@@ -372,13 +374,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       hasFittedRef.current = true;
     }
   }, [isPixiReady, nodes, fitToScreen]);
-
-  // Redraw dynamic grid when theme or grid style changes
-  useEffect(() => {
-    if (isPixiReady) {
-      updateGrid();
-    }
-  }, [isPixiReady, gridStyle, isDark, updateGrid]);
 
   // Render Hierarchical Connectors (Cubic Bezier Splines)
   useEffect(() => {
@@ -410,7 +405,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const dx = conn.targetX - conn.sourceX;
       const dy = conn.targetY - conn.sourceY;
 
-      // Adaptive cubic Bezier based on orientation (horizontal vs vertical flow)
       let cp1X = conn.sourceX + dx * 0.5;
       let cp1Y = conn.sourceY;
       let cp2X = conn.sourceX + dx * 0.5;
@@ -434,9 +428,17 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         join: 'round',
       });
     });
-  }, [connectors, nodePosMap, focusedBranchNodeIds, themeColors.cardBorderHover, isPixiReady]);
+  }, [
+    connectors,
+    nodePosMap,
+    selectedNodeId,
+    lineageNodeIds,
+    focusedBranchNodeIds,
+    themeColors.cardBorderHover,
+    isPixiReady,
+  ]);
 
-  // Render Cross-Links (Dashed Orange Curves with Directional Arrowheads)
+  // Render Cross-Links
   useEffect(() => {
     if (!isPixiReady) return;
     const g = crossLinksLayerRef.current;
@@ -472,7 +474,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         cap: 'round',
       });
 
-      // Directional arrow head
       const angle = Math.atan2(target.y - midY, target.x - midX);
       const arrowLen = 9;
       g.moveTo(target.x, target.y);
@@ -489,19 +490,16 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     });
   }, [crossLinks, nodePosMap, focusedBranchNodeIds, themeColors.crossLinkLine, isPixiReady]);
 
-  // Render Nodes Layer (Ultra-Crisp Vector-Quality Text with 3.5x Retina Resolution)
+  // Render Nodes Layer (Elevated Cards with Branch Accents & 3.5x Retina Typography)
   useEffect(() => {
     if (!isPixiReady) return;
     const nodesContainer = nodesLayerRef.current;
     if (!nodesContainer) return;
 
-    // Clean existing children
     nodesContainer.removeChildren();
 
-    // High resolution multiplier so zooming in to 3.5x maintains vector-crisp clarity
     const TEXT_RESOLUTION = 3.5;
 
-    // Map each positioned node to a PixiJS Container
     nodes.forEach((pNode) => {
       const nodeContainer = new Container();
       (nodeContainer as any).__nodeData = pNode;
@@ -524,34 +522,53 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         (selectedNodeId !== null && !isLineage && !isSelected) ||
         (highlightedNodeIds.size > 0 && !isHighlighted);
 
-      nodeContainer.alpha = isDimmed ? 0.25 : 1.0;
+      nodeContainer.alpha = isDimmed ? 0.28 : 1.0;
 
       const halfW = pNode.width / 2;
       const halfH = pNode.height / 2;
-      const radius = pNode.depth === 0 ? 12 : pNode.depth === 1 ? 10 : 8;
+      const radius = pNode.depth === 0 ? 14 : pNode.depth === 1 ? 12 : 10;
+      const branchColorHex = pNode.branchColor ? new Color(pNode.branchColor).toNumber() : 0x2563eb;
 
-      // Card Background Graphics
+      // Card Background Graphics with Tactile Elevation Shadow
       const cardG = new Graphics();
       cardG.eventMode = 'static';
       cardG.cursor = 'pointer';
 
-      // Soft Halo for Selected State
+      // 1. Multi-layer Soft Drop Shadow (gives crisp depth against clean studio background)
+      cardG.roundRect(-halfW - 1, -halfH + 2, pNode.width + 2, pNode.height + 3, radius + 1);
+      cardG.fill({ color: 0x0f172a, alpha: isDark ? 0.45 : 0.05 });
+      cardG.roundRect(-halfW, -halfH + 4, pNode.width, pNode.height, radius);
+      cardG.fill({ color: 0x0f172a, alpha: isDark ? 0.35 : 0.04 });
+
+      // 2. Soft Halo for Selected or Root State
       if (isSelected) {
+        cardG.roundRect(-halfW - 4, -halfH - 4, pNode.width + 8, pNode.height + 8, radius + 3);
+        cardG.fill({ color: themeColors.selectedHalo, alpha: 0.16 });
+      } else if (pNode.depth === 0) {
         cardG.roundRect(-halfW - 3, -halfH - 3, pNode.width + 6, pNode.height + 6, radius + 2);
-        cardG.fill({ color: themeColors.selectedHalo, alpha: 0.15 });
+        cardG.fill({ color: branchColorHex, alpha: 0.08 });
       }
 
-      // Card Face
+      // 3. Card Surface Face
       cardG.roundRect(-halfW, -halfH, pNode.width, pNode.height, radius);
       cardG.fill({ color: themeColors.cardBg });
 
-      // Border Stroke
+      // 4. Border Stroke
       if (isSelected) {
         cardG.stroke({ width: 2.5, color: themeColors.selectedBorder });
       } else if (isHighlighted) {
-        cardG.stroke({ width: 2, color: themeColors.highlightBorder });
+        cardG.stroke({ width: 2.2, color: themeColors.highlightBorder });
+      } else if (pNode.depth === 0) {
+        cardG.stroke({ width: 2, color: branchColorHex, alpha: 0.85 });
       } else {
-        cardG.stroke({ width: 1, color: themeColors.cardBorder });
+        cardG.stroke({ width: 1.25, color: themeColors.cardBorder });
+      }
+
+      // 5. Branch Color Left Accent Pill (for Level 1+ nodes)
+      if (pNode.depth >= 1) {
+        const accentHeight = Math.max(pNode.height - 20, 18);
+        cardG.roundRect(-halfW + 5, -accentHeight / 2, 4, accentHeight, 2);
+        cardG.fill({ color: branchColorHex, alpha: 0.9 });
       }
 
       nodeContainer.addChild(cardG);
@@ -560,9 +577,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const isMaskedInActiveRecall = isActiveRecall && !revealedNodeIds.has(pNode.id);
 
       if (isMaskedInActiveRecall) {
-        // Amber Veil Mask
         const veilG = new Graphics();
-        veilG.roundRect(-halfW + 8, -halfH + 8, pNode.width - 16, pNode.height - 16, 6);
+        veilG.roundRect(-halfW + 10, -halfH + 8, pNode.width - 20, pNode.height - 16, 6);
         veilG.fill({ color: themeColors.activeRecallVeil, alpha: 0.12 });
         veilG.stroke({ width: 1, color: themeColors.activeRecallVeil, alpha: 0.5 });
         nodeContainer.addChild(veilG);
@@ -571,7 +587,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
           text: 'देखने के लिए टैप करें (Reveal)',
           style: new TextStyle({
             fontFamily: '"Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif',
-            fontSize: 10,
+            fontSize: 10.5,
             fontWeight: '600',
             fill: '#d97706',
             align: 'center',
@@ -582,8 +598,8 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         veilText.anchor.set(0.5);
         nodeContainer.addChild(veilText);
       } else {
-        // Normal Node Typography (Crisp 3.5x Resolution for Zero Zoom Blur)
-        const fontSize = pNode.depth === 0 ? 15 : pNode.depth === 1 ? 13 : 12;
+        // Normal Node Typography (Crisp 3.5x Resolution)
+        const fontSize = pNode.depth === 0 ? 15 : pNode.depth === 1 ? 13.5 : 12.5;
         const fontWeight = pNode.depth === 0 ? '700' : pNode.depth === 1 ? '600' : '500';
 
         const labelText = new Text({
@@ -594,74 +610,103 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
             fontWeight,
             fill: themeColors.textPrimary,
             wordWrap: true,
-            wordWrapWidth: pNode.width - 24,
+            wordWrapWidth: pNode.width - 28,
             align: 'center',
-            lineHeight: fontSize * 1.3,
+            lineHeight: fontSize * 1.32,
           }),
           resolution: TEXT_RESOLUTION,
           roundPixels: true,
         });
         labelText.anchor.set(0.5);
 
-        // Position slightly higher if subtitle exists
         if (pNode.node.subtitle) {
-          labelText.y = -6;
+          labelText.y = -7;
 
           const subText = new Text({
             text: pNode.node.subtitle,
             style: new TextStyle({
               fontFamily: '"Geist Sans", "Outfit", "Noto Sans Devanagari", system-ui, sans-serif',
-              fontSize: 10,
+              fontSize: 10.5,
               fontWeight: '400',
               fill: themeColors.textSecondary,
               wordWrap: true,
-              wordWrapWidth: pNode.width - 24,
+              wordWrapWidth: pNode.width - 28,
               align: 'center',
             }),
             resolution: TEXT_RESOLUTION,
             roundPixels: true,
           });
           subText.anchor.set(0.5);
-          subText.y = halfH - 12;
+          subText.y = halfH - 13;
           nodeContainer.addChild(subText);
         }
 
         nodeContainer.addChild(labelText);
       }
 
-      // Child Count & Collapse/Expand Button (if node has children)
-      const hasChildren = (pNode.node.children && pNode.node.children.length > 0) || (pNode.children && pNode.children.length > 0);
+      // Child Count & Collapse/Expand Pill Badge
+      const hasChildren =
+        (pNode.node.children && pNode.node.children.length > 0) ||
+        (pNode.children && pNode.children.length > 0);
+
       if (hasChildren) {
+        const badgeOffset = getToggleBadgeOffset(pNode);
         const toggleBtn = new Container();
         toggleBtn.eventMode = 'static';
         toggleBtn.cursor = 'pointer';
-
-        // Position on the edge according to tree flow
-        toggleBtn.x = halfW;
-        toggleBtn.y = 0;
+        toggleBtn.x = badgeOffset.x;
+        toggleBtn.y = badgeOffset.y;
 
         const toggleG = new Graphics();
-        toggleG.circle(0, 0, 9);
-        toggleG.fill({ color: themeColors.cardBg });
-        toggleG.stroke({ width: 1.5, color: isSelected ? themeColors.selectedBorder : themeColors.cardBorderHover });
-        toggleBtn.addChild(toggleG);
+        const count = pNode.hiddenCount || pNode.node.children?.length || 0;
 
-        const glyphText = new Text({
-          text: pNode.collapsed ? '+' : '–',
-          style: new TextStyle({
-            fontFamily: '"Geist Mono", monospace',
-            fontSize: 11,
-            fontWeight: '700',
-            fill: themeColors.textSecondary,
-          }),
-          resolution: TEXT_RESOLUTION,
-          roundPixels: true,
-        });
-        glyphText.anchor.set(0.5, 0.55);
-        toggleBtn.addChild(glyphText);
+        if (pNode.collapsed) {
+          // Prominent colored pill badge showing "+3" hidden sub-nodes
+          const pillW = count >= 10 ? 32 : 26;
+          const pillH = 20;
+          toggleG.roundRect(-pillW / 2, -pillH / 2, pillW, pillH, 10);
+          toggleG.fill({ color: branchColorHex });
+          toggleG.stroke({ width: 1.5, color: 0xffffff });
+          toggleBtn.addChild(toggleG);
+
+          const glyphText = new Text({
+            text: `+${count}`,
+            style: new TextStyle({
+              fontFamily: '"Geist Mono", system-ui, sans-serif',
+              fontSize: 10.5,
+              fontWeight: '700',
+              fill: '#ffffff',
+            }),
+            resolution: TEXT_RESOLUTION,
+            roundPixels: true,
+          });
+          glyphText.anchor.set(0.5, 0.52);
+          toggleBtn.addChild(glyphText);
+        } else {
+          // Clean circular collapse button "–"
+          toggleG.circle(0, 0, 10);
+          toggleG.fill({ color: themeColors.cardBg });
+          toggleG.stroke({ width: 1.5, color: branchColorHex });
+          toggleBtn.addChild(toggleG);
+
+          const glyphText = new Text({
+            text: '–',
+            style: new TextStyle({
+              fontFamily: '"Geist Mono", monospace',
+              fontSize: 12,
+              fontWeight: '700',
+              fill: themeColors.textSecondary,
+            }),
+            resolution: TEXT_RESOLUTION,
+            roundPixels: true,
+          });
+          glyphText.anchor.set(0.5, 0.55);
+          toggleBtn.addChild(glyphText);
+        }
 
         toggleBtn.on('pointertap', (e) => {
           e.stopPropagation();
+          pendingFocusNodeIdRef.current = pNode.id;
           onToggleCollapse(pNode.id, e as any);
         });
 
@@ -675,7 +720,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
           onToggleReveal(pNode.id, e as any);
         } else {
           onSelectNode(pNode.id);
-          // Bi-directional Obsidian Bridge dispatch
           if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
             window.parent.postMessage({ action: 'OPEN_NOTE', nodeId: pNode.id }, '*');
           }
@@ -695,6 +739,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     isActiveRecall,
     revealedNodeIds,
     themeColors,
+    isDark,
     onSelectNode,
     onToggleCollapse,
     onToggleReveal,
@@ -719,7 +764,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       hadMultiTouchRef.current = false;
     }
 
-    // Guard: Never select or deselect if user was pinching or multi-touch dragging on mobile
     if (!e.isPrimary || wasMultiTouch) {
       pointerDownRef.current = null;
       return;
@@ -731,8 +775,7 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
     const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     const duration = Date.now() - start.time;
 
-    // Distinguish tap from pan/drag (threshold 10px and 500ms)
-    if (dist < 10 && duration < 500) {
+    if (dist < 12 && duration < 500) {
       const viewport = viewportRef.current;
       const container = containerRef.current;
       if (!viewport || !container) return;
@@ -742,17 +785,18 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
       const screenY = e.clientY - rect.top;
       const worldPoint = viewport.toWorld(screenX, screenY);
 
-      // Check nodes from top to bottom (leaf to root priority)
       for (let i = nodes.length - 1; i >= 0; i--) {
         const pNode = nodes[i];
         const halfW = pNode.width / 2;
         const halfH = pNode.height / 2;
 
-        // Check collapse handle (+/- handle circle at edge) with generous mobile hitbox
+        // Check collapse/expand badge with generous 24px touch radius
         if (pNode.node.children && pNode.node.children.length > 0) {
-          const handleX = pNode.x + halfW;
-          const handleY = pNode.y;
-          if (Math.hypot(worldPoint.x - handleX, worldPoint.y - handleY) <= 18) {
+          const badgeOffset = getToggleBadgeOffset(pNode);
+          const handleX = pNode.x + badgeOffset.x;
+          const handleY = pNode.y + badgeOffset.y;
+          if (Math.hypot(worldPoint.x - handleX, worldPoint.y - handleY) <= 24) {
+            pendingFocusNodeIdRef.current = pNode.id;
             onToggleCollapse(pNode.id, e as any);
             return;
           }
@@ -769,7 +813,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
             onToggleReveal(pNode.id, e as any);
           } else {
             onSelectNode(pNode.id);
-            // Bi-directional Obsidian Bridge dispatch
             if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
               window.parent.postMessage({ action: 'OPEN_NOTE', nodeId: pNode.id }, '*');
             }
@@ -778,7 +821,6 @@ export const MindMapWebGLCanvas: React.FC<MindMapWebGLCanvasProps> = ({
         }
       }
 
-      // Deselect if empty canvas tapped
       onSelectNode(null);
     }
   };

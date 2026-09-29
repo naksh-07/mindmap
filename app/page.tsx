@@ -10,7 +10,7 @@ import { MindMapToolbar } from '@/components/mindmap/MindMapToolbar';
 import { MindMapNodeDetailPanel } from '@/components/mindmap/MindMapNodeDetailPanel';
 import { MindMapQuizModal } from '@/components/mindmap/MindMapQuizModal';
 import { MindMapErrorState } from '@/components/mindmap/MindMapErrorState';
-import { Layers, FolderOpen } from 'lucide-react';
+import { Layers, FolderOpen, ZoomIn, ZoomOut, Maximize2, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function MindMapPage() {
@@ -36,13 +36,44 @@ export default function MindMapPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [quizInitialNodeId, setQuizInitialNodeId] = useState<string | null>(null);
-  const [gridStyle, setGridStyle] = useState<'dots' | 'clean'>('dots');
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  // Track mobile viewport for compact layout spacing
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const checkViewport = () => setIsMobileViewport(window.innerWidth < 768);
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
 
   // Web font load readiness listener (BUG-011 Fix)
   const [fontsLoaded, setFontsLoaded] = useState(false);
   useEffect(() => {
     if (typeof document !== 'undefined' && document.fonts) {
       document.fonts.ready.then(() => setFontsLoaded(true));
+    }
+  }, []);
+
+  // Apply ingested data with smart mobile defaults (2-column readable view on phones)
+  const applyIngestedData = useCallback((result: IngestionResult) => {
+    setIngestionResult(result);
+    if (result.success && result.data?.root) {
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        setLayoutMode('horizontal');
+        const mobileInitialCollapsed = new Set<string>();
+        (result.data.root.children ?? []).forEach((branch) => {
+          if (branch.children && branch.children.length > 0) {
+            mobileInitialCollapsed.add(branch.id);
+          }
+        });
+        setCollapsedSet(mobileInitialCollapsed);
+      } else {
+        setCollapsedSet(new Set());
+      }
+      setSourceMode('loaded');
+    } else {
+      setSourceMode('error');
     }
   }, []);
 
@@ -84,8 +115,7 @@ export default function MindMapPage() {
         if (currentFetchId.current !== fetchId) return;
 
         const result = parseAndIngestMindMapData(jsonText);
-        setIngestionResult(result);
-        setSourceMode(result.success ? 'loaded' : 'error');
+        applyIngestedData(result);
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         if (currentFetchId.current !== fetchId) return;
@@ -125,18 +155,16 @@ export default function MindMapPage() {
       });
       const result = parseAndIngestMindMapData(malformedInput);
       if (currentFetchId.current === fetchId) {
-        setIngestionResult(result);
-        setSourceMode(result.success ? 'loaded' : 'error');
+        applyIngestedData(result);
       }
     } else {
       const rawBenchmark = ALL_TEST_DATASETS[key] || ALL_TEST_DATASETS['geo-50'];
       const result = parseAndIngestMindMapData(rawBenchmark);
       if (currentFetchId.current === fetchId) {
-        setIngestionResult(result);
-        setSourceMode(result.success ? 'loaded' : 'error');
+        applyIngestedData(result);
       }
     }
-  }, []);
+  }, [applyIngestedData]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -237,8 +265,7 @@ export default function MindMapPage() {
           setQuizInitialNodeId(null);
 
           const result = parseAndIngestMindMapData(rawData);
-          setIngestionResult(result);
-          setSourceMode(result.success ? 'loaded' : 'error');
+          applyIngestedData(result);
         }
       }
     };
@@ -263,7 +290,7 @@ export default function MindMapPage() {
       window.removeEventListener('message', handleMessage);
       readyRetryTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, []);
+  }, [applyIngestedData]);
 
   const mindMapData = ingestionResult.data;
 
@@ -387,7 +414,17 @@ export default function MindMapPage() {
       level1Children.forEach((c) => toCollapse.add(c.id));
       setCollapsedSet(toCollapse);
     }
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('mindmap:fit-screen'));
+    }, 50);
   }, [hasCollapsedNodes, level1Children]);
+
+  const handleChangeLayoutMode = useCallback((mode: LayoutMode) => {
+    setLayoutMode(mode);
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('mindmap:fit-screen'));
+    }, 50);
+  }, []);
 
   // Search matching nodes logic with safe nullish property access (BUG-005 Fix)
   const { highlightedNodeIds, matchCount, totalNodeCount } = useMemo(() => {
@@ -485,8 +522,14 @@ export default function MindMapPage() {
       return { nodes: [], connectors: [] };
     }
     const forceFallback = !isMounted;
-    return computeMindMapLayout(mindMapData.root, layoutMode, collapsedSet, forceFallback);
-  }, [mindMapData?.root, layoutMode, collapsedSet, fontsLoaded, isMounted]);
+    return computeMindMapLayout(
+      mindMapData.root,
+      layoutMode,
+      collapsedSet,
+      forceFallback,
+      isMobileViewport
+    );
+  }, [mindMapData?.root, layoutMode, collapsedSet, fontsLoaded, isMounted, isMobileViewport]);
 
   // Empty state view
   if (sourceMode === 'empty') {
@@ -541,7 +584,7 @@ export default function MindMapPage() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         layoutMode={layoutMode}
-        onChangeLayoutMode={setLayoutMode}
+        onChangeLayoutMode={handleChangeLayoutMode}
         datasetKey={datasetKey ?? undefined}
         onChangeDatasetKey={setDatasetKey}
         focusedBranchId={focusedBranchId}
@@ -558,12 +601,10 @@ export default function MindMapPage() {
         onToggleCollapseAll={handleToggleCollapseAll}
         matchCount={matchCount}
         totalNodes={totalNodeCount}
-        gridStyle={gridStyle}
-        onToggleGridStyle={() => setGridStyle(gridStyle === 'dots' ? 'clean' : 'dots')}
       />
 
-      {/* Main Mind Map Canvas Stage with Hardware WebGL Dynamic Grid */}
-      <div className="flex-1 w-full h-full relative overflow-hidden bg-background">
+      {/* Main Mind Map Canvas Stage with Smooth Zero-Dot Studio Surface */}
+      <div className="flex-1 w-full h-full relative overflow-hidden canvas-stage">
         <MindMapWebGLCanvas
           nodes={positionedNodes}
           connectors={connectors}
@@ -575,11 +616,76 @@ export default function MindMapPage() {
           isActiveRecall={isActiveRecall}
           revealedNodeIds={revealedNodeIds}
           theme={theme}
-          gridStyle={gridStyle}
           onSelectNode={setSelectedNodeId}
           onToggleCollapse={handleToggleCollapse}
           onToggleReveal={handleToggleReveal}
         />
+
+        {/* Mobile Quick Layout & Guide Pill Bar (< sm) */}
+        <div className="sm:hidden absolute top-2.5 left-2.5 right-2.5 z-20 pointer-events-none flex items-center justify-between gap-2">
+          <div className="pointer-events-auto inline-flex items-center p-0.5 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xs text-[11px] font-medium">
+            {(['horizontal', 'balanced', 'vertical'] as LayoutMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => handleChangeLayoutMode(mode)}
+                className={cn(
+                  'px-2 py-1 rounded-md transition-colors capitalize',
+                  layoutMode === mode
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-slate-600 dark:text-slate-400'
+                )}
+              >
+                {mode === 'horizontal' ? 'Tree' : mode}
+              </button>
+            ))}
+          </div>
+
+          <div className="pointer-events-none px-2 py-1 rounded-lg bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/70 dark:border-slate-800 text-[10px] font-medium text-slate-500 dark:text-slate-400 shadow-xs">
+            Tap <span className="font-bold text-indigo-600 dark:text-indigo-400">+N</span> to expand
+          </div>
+        </div>
+
+        {/* Floating Mobile Thumb Control Dock (< sm) */}
+        <div className="sm:hidden absolute bottom-13 right-2.5 z-20 flex flex-col items-center gap-1.5 p-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-md">
+          <button
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('mindmap:zoom', { detail: { direction: 'in' } }))
+            }
+            aria-label="Zoom In"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-700 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800 transition-colors"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('mindmap:zoom', { detail: { direction: 'out' } }))
+            }
+            aria-label="Zoom Out"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-700 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800 transition-colors"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <div className="w-5 h-px bg-slate-200 dark:bg-slate-800" />
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('mindmap:fit-screen'))}
+            aria-label="Fit to Screen"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 active:bg-blue-50 dark:active:bg-blue-950/50 transition-colors"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleToggleCollapseAll}
+            aria-label={hasCollapsedNodes ? 'Expand All Branches' : 'Collapse Branches'}
+            className={cn(
+              'w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
+              hasCollapsedNodes
+                ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                : 'text-slate-700 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800'
+            )}
+          >
+            <ChevronsUpDown className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Bottom Canvas HUD: Breadcrumbs & Telemetry */}
         <footer className="absolute bottom-2 sm:bottom-3.5 left-2 sm:left-6 z-20 pointer-events-none flex items-center gap-2 max-w-[calc(100vw-16px)] sm:max-w-none">
